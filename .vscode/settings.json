@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "aegisflow PostgreSQL",
+            "database": "aegisflow",
+            "username": "aegisflow_admin"
+        }
+    ]
+}
