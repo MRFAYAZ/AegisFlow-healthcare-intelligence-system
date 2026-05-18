@@ -1,1 +1,7 @@
-SELECT * FROM users LIMIT 5;
+SELECT * FROM inventory_current;
+
+SELECT * FROM facilities;
+
+SELECT * FROM medicine_master;
+
+SELECT * FROM locations;
