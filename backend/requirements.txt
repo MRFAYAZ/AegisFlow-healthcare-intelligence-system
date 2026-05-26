@@ -1,1 +1,7 @@
-
+sqlalchemy-utils
+dotenv
+geoalchemy2
+psycopg2
+dotenv
+pydantic-settings
+alembic

@@ -1,0 +1,65 @@
+from enum import Enum
+
+class FacilityTypeEnum(str, Enum):
+    HOSPITAL = "HOSPITAL"
+    MEDICAL_SHOP = "MEDICAL_SHOP"
+    SUPPLIER = "SUPPLIER"
+    WAREHOUSE = "WAREHOUSE"
+
+class UserRoleEnum(str, Enum):
+    SYSTEM_ADMIN = "SYSTEM_ADMIN"
+    HOSPITAL_ADMIN = "HOSPITAL_ADMIN"
+    PHARMACIST = "PHARMACIST"
+    SHOP_OWNER = "SHOP_OWNER"
+    EMERGENCY_OPERATOR = "EMERGENCY_OPERATOR"
+    SUPPLIER = "SUPPLIER_MANAGER"
+
+class SeverityEnum(str, Enum):
+    SAFE = "SAFE"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
+    EMERGENCY = "EMERGENCY"
+
+class AlertStatusEnum(str, Enum):
+    ACTIVE = "ACTIVE"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+    RESOLVED = "RESOLVED"
+    EXPIRED = "EXPIRED"
+
+class TransferStatusEnum(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    IN_TRANSIT = "IN_TRANSIT"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+    
+class PurchaseStatusEnum(str, Enum):
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    REFUNDED = "REFUNDED"
+
+class EventTypeEnum(str, Enum):
+    PURCHASE = "PURCHASE"
+    TRANSFER = "TRANSFER"
+    ALERT = "ALERT"
+    EMERGENCY = "EMERGENCY"
+    OUTBREAK = "OUTBREAK"
+    INVENTORY_UPDATE = "INVENTORY_UPDATE"
+    LOGIN = "LOGIN"
+    SYSTEM = "SYSTEM"
+
+class EmergencyStatusEnum(str, Enum):
+    ACTIVE = "ACTIVE"
+    MATCHING = "MATCHING"
+    PARTIALLY_RESOLVED = "PARTIALLY_RESOLVED"
+    RESOLVED = "RESOLVED"
+    CLOSED = "CLOSED"
+
+class OutbreaksStatusEnum(str, Enum):
+    DETECTED = "DETECTED"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    CONFIRMED = "CONFIRMED"
+    RESOLVED = "RESOLVED"
+    
