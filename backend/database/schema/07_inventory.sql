@@ -30,7 +30,9 @@ CREATE TABLE inventory_current (
     severity severity_enum DEFAULT 'SAFE',
     last_restocked_at TIMESTAMP,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(facility_id, medicine_id)
+    UNIQUE(facility_id, medicine_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE inventory_snapshots (

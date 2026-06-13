@@ -9,7 +9,7 @@ class Base(DeclarativeBase):
     pass
 
 class TimestampMixin:
-    created_At = mapped_column(
+    created_at = mapped_column(
         TIMESTAMP(timezone=True),
         server_default=func.now(),
         nullable=False

@@ -1,3 +1,8 @@
+-- =====================================================
+-- AEGISFLOW
+-- HEALTHCARE FACILITIES
+-- =====================================================
+
 INSERT INTO facilities (
     facility_name,
     facility_type,
@@ -5,110 +10,81 @@ INSERT INTO facilities (
     license_number,
     contact_email,
     emergency_contact,
-    operating_hours,
     is_24x7
 )
+
 SELECT
     'Apollo Hospital Chennai',
-    'HOSPITAL',
+    'HOSPITAL'::facility_type_enum,
     location_id,
-    'TN-HSP-001',
+    'TN-HOSP-1001',
     'apollo@hospital.com',
-    '9000000101',
-    '24 Hours',
+    '04411111111',
     TRUE
 FROM locations
-WHERE city = 'Chennai'
-ON CONFLICT DO NOTHING;
+WHERE city='Anna Nagar'
 
-INSERT INTO facilities (
-    facility_name,
-    facility_type,
-    location_id,
-    license_number,
-    contact_email,
-    emergency_contact,
-    operating_hours,
-    is_24x7
-)
+UNION ALL
+
 SELECT
-    'Fortis Medical Center',
-    'HOSPITAL',
+    'Government General Hospital',
+    'HOSPITAL'::facility_type_enum,
     location_id,
-    'MH-HSP-002',
-    'fortis@hospital.com',
-    '9000000102',
-    '24 Hours',
+    'TN-HOSP-1002',
+    'ggh@tn.gov.in',
+    '04422222222',
     TRUE
 FROM locations
-WHERE city = 'Coimbatore'
-ON CONFLICT DO NOTHING;
+WHERE city='Tambaram'
 
-INSERT INTO facilities (
-    facility_name,
-    facility_type,
+UNION ALL
+
+SELECT
+    'SIMS Hospital',
+    'HOSPITAL'::facility_type_enum,
     location_id,
-    license_number,
-    contact_email,
-    emergency_contact,
-    operating_hours,
-    is_24x7
-)
-SELECT 
-    'MedPlus Pharmacy Chennai',
-    'MEDICAL_SHOP',
+    'TN-HOSP-1003',
+    'sims@hospital.com',
+    '04433333333',
+    TRUE
+FROM locations
+WHERE city='Porur'
+
+UNION ALL
+
+SELECT
+    'Apollo Pharmacy',
+    'MEDICAL_SHOP'::facility_type_enum,
     location_id,
-    'TN-SHP-001',
-    'medplus@shop.com',
-    '9000000103',
-    '9 AM - 9 PM',
+    'TN-MED-2001',
+    'apollo@pharmacy.com',
+    '04444444444',
     FALSE
 FROM locations
-WHERE city = 'Chennai'
-ON CONFLICT DO NOTHING;
+WHERE city='Velachery'
 
-INSERT INTO facilities (
-    facility_name,
-    facility_type,
-    location_id,
-    license_number,
-    contact_email,
-    emergency_contact,
-    operating_hours,
-    is_24x7
-)
+UNION ALL
+
 SELECT
-    'WellCare Pharmacy Hyderabad',
-    'MEDICAL_SHOP',
+    'MedPlus Pharmacy',
+    'MEDICAL_SHOP'::facility_type_enum,
     location_id,
-    'TG-SHP-001',
-    'wellcare@shop.com',
-    '9000000104',
-    '9 AM - 10 PM',
+    'TN-MED-2002',
+    'medplus@pharmacy.com',
+    '04455555555',
     FALSE
 FROM locations
-WHERE city = 'Hyderabad'
-ON CONFLICT DO NOTHING;
+WHERE city='T Nagar'
 
-INSERT INTO facilities (
-    facility_name,
-    facility_type,
+UNION ALL
+
+SELECT
+    'Aster Medical Supplier',
+    'SUPPLIER'::facility_type_enum,
     location_id,
-    license_number,
-    contact_email,
-    emergency_contact,
-    operating_hours,
-    is_24x7
-)
-SELECT 
-    'SouthCare Suppliers',
-    'SUPPLIER',
-    location_id,
-    'KA-SUP-001',
-    'supplier@southcare.com',
-    '9000000105',
-    '24 Hours',
-    TRUE
+    'TN-SUP-3001',
+    'supplier@aster.com',
+    '04466666666',
+    FALSE
 FROM locations
-WHERE city = 'Bangalore'
-ON CONFLICT DO NOTHING;
+WHERE city='OMR';

@@ -19,4 +19,4 @@
 \i /database/schema/14_indexes.sql
 
 -- SEED DATA
-\i /database/seed.sql
+-- \i /database/seed.sql

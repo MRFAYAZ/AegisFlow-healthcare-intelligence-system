@@ -1,0 +1,10 @@
+- ======================================================================
+- DOCKER COMMANDS USED IN TERMINAL
+- =====================================================================
+  # to start the docker container
+  docker compose
+  # to run a sql file inside the postgres container
+  docker exec -i aegisflow_postgres psql -U aegisflow_admin -d aegisflow < filepath
+  # to start the psql runnner in TERMINAL
+  docker exec -it aegisflow_postgres psql -U aegisflow_admin -d aegisflow 
+  

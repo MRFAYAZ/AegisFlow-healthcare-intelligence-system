@@ -1,4 +1,10 @@
+-- =====================================================
+-- AEGISFLOW
+-- CHENNAI HEALTHCARE LOCATIONS
+-- =====================================================
+
 INSERT INTO locations (
+    country,
     state,
     district,
     city,
@@ -9,54 +15,75 @@ INSERT INTO locations (
     geo_point
 )
 VALUES
+
 (
+    'India',
     'Tamil Nadu',
     'Chennai',
+    'Anna Nagar',
+    '600040',
+    '2nd Avenue Anna Nagar',
+    13.0849,
+    80.2101,
+    ST_SetSRID(ST_MakePoint(80.2101,13.0849),4326)::geography
+),
+
+(
+    'India',
+    'Tamil Nadu',
     'Chennai',
-    '600095',
-    'Ambattur Industrial Estate',
-    13.1143,
-    80.1548,
-    ST_SetSRID(ST_MakePoint(80.1548, 13.1143), 4326)
+    'Velachery',
+    '600042',
+    'Velachery Main Road',
+    12.9750,
+    80.2200,
+    ST_SetSRID(ST_MakePoint(80.2200,12.9750),4326)::geography
 ),
+
 (
+    'India',
     'Tamil Nadu',
-    'Coimbatore',
-    'Coimbatore',
-    '641001',
-    'Gandhipuram Main Road',
-    11.0168,
-    76.9558,
-    ST_SetSRID(ST_MakePoint(76.9558, 11.0168), 4326)
+    'Chennai',
+    'Tambaram',
+    '600045',
+    'GST Road Tambaram',
+    12.9249,
+    80.1000,
+    ST_SetSRID(ST_MakePoint(80.1000,12.9249),4326)::geography
 ),
+
 (
+    'India',
     'Tamil Nadu',
-    'Madurai',
-    'Madurai',
-    '625001',
-    'KK Nagar',
-    9.9252,
-    78.1198,
-    ST_SetSRID(ST_MakePoint(78.1198, 9.9252), 4326)
+    'Chennai',
+    'Porur',
+    '600116',
+    'Mount Poonamallee Road',
+    13.0380,
+    80.1565,
+    ST_SetSRID(ST_MakePoint(80.1565,13.0380),4326)::geography
 ),
+
 (
-    'Karnataka',
-    'Bangalore Urban',
-    'Bangalore',
-    '560001',
-    'MG Road',
-    12.9716,
-    77.5946,
-    ST_SetSRID(ST_MakePoint(77.5946, 12.9716), 4326)
+    'India',
+    'Tamil Nadu',
+    'Chennai',
+    'OMR',
+    '600119',
+    'Old Mahabalipuram Road',
+    12.9121,
+    80.2295,
+    ST_SetSRID(ST_MakePoint(80.2295,12.9121),4326)::geography
 ),
+
 (
-    'Telangana',
-    'Hyderabad',
-    'Hyderabad',
-    '500001',
-    'Banjara Hills',
-    17.3850,
-    78.4867,
-    ST_SetSRID(ST_MakePoint(78.4867, 17.3850), 4326)
-)
-ON CONFLICT DO NOTHING;
+    'India',
+    'Tamil Nadu',
+    'Chennai',
+    'T Nagar',
+    '600017',
+    'Usman Road',
+    13.0418,
+    80.2341,
+    ST_SetSRID(ST_MakePoint(80.2341,13.0418),4326)::geography
+);

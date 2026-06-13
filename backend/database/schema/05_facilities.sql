@@ -5,6 +5,7 @@ CREATE TABLE facilities (
     location_id UUID REFERENCES locations(location_id),
     license_number VARCHAR(100),
     contact_email VARCHAR(255),
+    contact_phone VARCHAR(20),
     emergency_contact VARCHAR(20),
     operating_hours VARCHAR(100),
     is_24x7 BOOLEAN DEFAULT FALSE,

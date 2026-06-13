@@ -1,0 +1,37 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        'surface-bg':    '#f5f4f0',
+        'surface-base':  '#ffffff',
+        'surface-muted': '#f9f8f5',
+        'surface-subtle':'#f0eeea',
+        'border':        '#e5e3de',
+        'border-strong': '#d0cec8',
+        'ink':           '#1a1916',
+        'ink-muted':     '#6b6860',
+        'ink-faint':     '#9a9890',
+        'brand-500':     '#3b82f6',
+        'brand-600':     '#2563eb',
+        'status-red':    '#dc2626',
+        'status-red-bg': '#fef2f2',
+        'status-red-bdr':'#fecaca',
+        'status-orange':    '#ea580c',
+        'status-orange-bg': '#fff7ed',
+        'status-orange-bdr':'#fed7aa',
+        'status-yellow':    '#d97706',
+        'status-yellow-bg': '#fffbeb',
+        'status-yellow-bdr':'#fde68a',
+        'status-green':    '#16a34a',
+        'status-green-bg': '#f0fdf4',
+        'status-green-bdr':'#bbf7d0',
+        'status-blue':    '#2563eb',
+        'status-blue-bg': '#eff6ff',
+        'status-blue-bdr':'#bfdbfe',
+      },
+    },
+  },
+  plugins: [],
+}

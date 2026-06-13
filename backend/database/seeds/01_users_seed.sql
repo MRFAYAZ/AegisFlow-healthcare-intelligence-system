@@ -1,3 +1,8 @@
+-- =====================================================
+-- AEGISFLOW
+-- USERS SEED DATA
+-- =====================================================
+
 INSERT INTO users (
     full_name,
     email,
@@ -5,61 +10,84 @@ INSERT INTO users (
     password_hash,
     role
 )
-VALUES 
+VALUES
+
 (
-    'Arjun Mehta',
+    'Shahid khan',
     'admin@aegisflow.com',
-    '9876543210',
-    '$2b$12$hashedpassword1',
+    '9000000001',
+    '$2b$12$seedadminhash',
     'SYSTEM_ADMIN'
 ),
+
 (
-    'DR. Priya Sharma',
-    'priya.sharma@apollohealth.com',
-    '9876543211',
-    '$2b$12$hashedpassword2',
+    'Dr. Ravi Kumar',
+    'ravi.kumar@apollohospital.com',
+    '9000000002',
+    '$2b$12$seedhash',
     'HOSPITAL_ADMIN'
 ),
+
 (
-    'Dr. Viram Rao',
-    'vikram.rao@fortishealth.com',
-    '9876543212',
-    '$2b$12$hashedpassword3',
+    'Dr. Meena Narayanan',
+    'meena.narayanan@ggh.in',
+    '9000000003',
+    '$2b$12$seedhash',
     'HOSPITAL_ADMIN'
 ),
+
 (
-    'Aisha Khan',
-    'aisha.khan@medplus.com',
-    '9876543214',
-    '$2b$12$hashedpassword4',
-    'SHOP_OWNER'
-),
-(
-    'Ravi Kumar',
-    'ravi.kumar@apollohealth.com',
-    '9876543213',
-    '$2b$12$hashedpassword4',
+    'Arjun Pharmacist',
+    'arjun@apollo-pharmacy.in',
+    '9000000004',
+    '$2b$12$seedhash',
     'PHARMACIST'
 ),
+
 (
-    'Sanjay Patel',
-    'sanjay.patel@wellcare.com',
-    '9876543215',
-    '$2b$12$hashedpassword6',
+    'Sathish Kumar',
+    'sathish@medplus.in',
+    '9000000005',
+    '$2b$12$seedhash',
     'SHOP_OWNER'
 ),
+
 (
-    'Nisha Reddy',
-    'nisha.reddy@emergencyops.com',
-    '9876543216',
-    '$2b$12$hashedpassword7',
+    'Priya Reddy',
+    'priya@netmedspartner.in',
+    '9000000006',
+    '$2b$12$seedhash',
+    'SHOP_OWNER'
+),
+
+(
+    'Karthik Operations',
+    'karthik@aegisflow.com',
+    '9000000007',
+    '$2b$12$seedhash',
     'EMERGENCY_OPERATOR'
 ),
+
 (
-    'Karthik Iyer',
-    'karthik.iyer@supplierhub.com',
-    '9876543217',
-    '$2b$12$hashedpassword8',
+    'Vignesh Supplier',
+    'vignesh@astersupplier.com',
+    '9000000008',
+    '$2b$12$seedhash',
     'SUPPLIER_MANAGER'
-)
-ON CONFLICT DO NOTHING;
+),
+
+(
+    'Lavanya Supplier',
+    'lavanya@astersupplier.com',
+    '9000000009',
+    '$2b$12$seedhash',
+    'SUPPLIER_MANAGER'
+),
+
+(
+    'Warehouse Supervisor',
+    'warehouse@aegisflow.com',
+    '9000000010',
+    '$2b$12$seedhash',
+    'SUPPLIER_MANAGER'
+);

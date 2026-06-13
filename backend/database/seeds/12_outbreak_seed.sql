@@ -1,3 +1,8 @@
+-- =====================================================
+-- AEGISFLOW
+-- OUTBREAK SIGNALS
+-- =====================================================
+
 INSERT INTO outbreak_signals (
     city,
     medicine_id,
@@ -8,61 +13,57 @@ INSERT INTO outbreak_signals (
     confidence_score,
     outbreak_status
 )
+
 SELECT
     'Chennai',
-    m.medicine_id,
-    120,
-    210,
-    75,
+    medicine_id,
+    150,
+    420,
+    180.00,
     4,
-    89,
+    92.50,
     'CONFIRMED'
-FROM medicine_master m
-WHERE m.medicine_name = 'Paracetamol 500mg'
-ON CONFLICT DO NOTHING;
+FROM medicine_master
+WHERE medicine_code='ORS001'
 
-INSERT INTO outbreak_signals (
-    city,
-    medicine_id,
-    baseline_consumption,
-    current_consumption,
-    spike_percentage,
-    affected_facilities,
-    confidence_score,
-    outbreak_status
-)
+UNION ALL
+
 SELECT
-    'Coimbatore',
-    m.medicine_id,
-    80,
-    155,
-    93,
+    'Chennai',
+    medicine_id,
+    200,
+    510,
+    155.00,
     3,
-    84,
+    89.00,
     'UNDER_REVIEW'
-FROM medicine_master m
-WHERE m.medicine_name = 'Azithromycin 500mg'
-ON CONFLICT DO NOTHING;
+FROM medicine_master
+WHERE medicine_code='PCM500'
 
-INSERT INTO outbreak_signals (
-    city,
-    medicine_id,
-    baseline_consumption,
-    current_consumption,
-    spike_percentage,
-    affected_facilities,
-    confidence_score,
-    outbreak_status
-)
+UNION ALL
+
 SELECT
-    'Madurai',
-    m.medicine_id,
-    60,
-    118,
-    96,
+    'OMR',
+    medicine_id,
+    80,
+    250,
+    212.00,
     2,
-    79,
+    95.00,
+    'CONFIRMED'
+FROM medicine_master
+WHERE medicine_code='SAL100'
+
+UNION ALL
+
+SELECT
+    'Tambaram',
+    medicine_id,
+    70,
+    180,
+    157.00,
+    2,
+    85.00,
     'DETECTED'
-FROM medicine_master m
-WHERE m.medicine_name = 'ORS Sachet'
-ON CONFLICT DO NOTHING;
+FROM medicine_master
+WHERE medicine_code='AZI250';

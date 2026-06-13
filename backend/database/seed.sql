@@ -1,14 +1,14 @@
-\i /database/seeds/01_users_seed.sql
-\i /database/seeds/02_locations_seed.sql
-\i /database/seeds/03_facilities_seed.sql
-\i /database/seeds/04_facility_users_seed.sql
-\i /database/seeds/05_medicines_seed.sql
-\i /database/seeds/06_inventory_seed.sql
+--\i /database/seeds/01_users_seed.sql
+--\i /database/seeds/02_locations_seed.sql
+--\i /database/seeds/03_facilities_seed.sql
+--\i /database/seeds/04_facility_users_seed.sql
+--\i /database/seeds/05_medicines_seed.sql
+--\i /database/seeds/06_inventory_seed.sql
 \i /database/seeds/07_purchase_seed.sql
-\i /database/seeds/08_alerts_seed.sql
+/*\i /database/seeds/08_alerts_seed.sql
 \i /database/seeds/08_transfers_seed.sql
 \i /database/seeds/09_emergency_seed.sql
 \i /database/seeds/10_redistribution_seed.sql
 \i /database/seeds/11_shortage_scores_seed.sql
 \i /database/seeds/12_outbreak_seed.sql
-\i /database/seeds/13_fact_metrics_seed.sql
+\i /database/seeds/13_fact_metrics_seed.sql */

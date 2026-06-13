@@ -7,5 +7,7 @@ CREATE TABLE alert_events (
     alert_message TEXT,
     alert_status alert_status_enum DEFAULT 'ACTIVE',
     triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    resolved_at TIMESTAMP
+    resolved_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

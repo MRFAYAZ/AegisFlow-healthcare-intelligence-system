@@ -1,3 +1,8 @@
+-- =====================================================
+-- AEGISFLOW
+-- EMERGENCY CASES
+-- =====================================================
+
 INSERT INTO emergency_cases (
     facility_id,
     medicine_id,
@@ -6,19 +11,65 @@ INSERT INTO emergency_cases (
     emergency_radius_km,
     required_quantity,
     available_quantity,
-    emergency_status
+    emergency_status,
+    triggered_by,
+    triggered_at
 )
+
 SELECT
     f.facility_id,
     m.medicine_id,
-    115,
-    'EMERGENCY',
-    10,
-    120,
-    15,
-    'ACTIVE'
+    96.00,
+    'EMERGENCY'::severity_enum,
+    25,
+    150,
+    4,
+    'ACTIVE',
+    u.user_id,
+    NOW() - INTERVAL '6 hours'
 FROM facilities f
-CROSS JOIN medicine_master m
-WHERE f.facility_name = 'Apollo Hospital Chennai'
-AND m.medicine_name = 'Insulin Injection'
-ON CONFLICT DO NOTHING;
+JOIN medicine_master m
+ON m.medicine_code = 'SAL100'
+JOIN users u
+ON u.role = 'EMERGENCY_OPERATOR'
+WHERE f.facility_name = 'Apollo Pharmacy'
+
+UNION ALL
+
+SELECT
+    f.facility_id,
+    m.medicine_id,
+    92.00,
+    'CRITICAL'::severity_enum,
+    20,
+    100,
+    8,
+    'ACTIVE',
+    u.user_id,
+    NOW() - INTERVAL '1 day'
+FROM facilities f
+JOIN medicine_master m
+ON m.medicine_code = 'INS100'
+JOIN users u
+ON u.role = 'EMERGENCY_OPERATOR'
+WHERE f.facility_name = 'Government General Hospital'
+
+UNION ALL
+
+SELECT
+    f.facility_id,
+    m.medicine_id,
+    78.00,
+    'WARNING'::severity_enum,
+    15,
+    75,
+    25,
+    'MATCHING',
+    u.user_id,
+    NOW() - INTERVAL '12 hours'
+FROM facilities f
+JOIN medicine_master m
+ON m.medicine_code = 'ORS001'
+JOIN users u
+ON u.role = 'EMERGENCY_OPERATOR'
+WHERE f.facility_name = 'MedPlus Pharmacy';

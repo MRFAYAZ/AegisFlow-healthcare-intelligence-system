@@ -1,3 +1,8 @@
+-- =====================================================
+-- AEGISFLOW
+-- REDISTRIBUTION RECOMMENDATIONS
+-- =====================================================
+
 INSERT INTO redistribution_recommendations (
     shortage_facility_id,
     donor_facility_id,
@@ -8,19 +13,58 @@ INSERT INTO redistribution_recommendations (
     redistribution_score,
     recommendation_reason
 )
+
 SELECT
-    f1.facility_id,
-    f2.facility_id,
+    sf.facility_id,
+    df.facility_id,
     m.medicine_id,
-    80,
-    200,
-    7.5,
-    91,
-    'Nearby surplus inventory available for emergency redistribution'
-FROM facilities f1
-CROSS JOIN facilities f2
-CROSS JOIN medicine_master m
-WHERE f1.facility_name = 'Apollo Hospital Chennai'
-AND f2.facility_name = 'Fortis Medical Center'
-AND m.medicine_name = 'Insulin Injection'
-ON CONFLICT DO NOTHING;
+    100,
+    250,
+    8.5,
+    95.0,
+    'Nearest facility with sufficient Salbutamol inventory'
+FROM facilities sf
+JOIN facilities df
+ON sf.facility_id <> df.facility_id
+JOIN medicine_master m
+ON m.medicine_code = 'SAL100'
+WHERE sf.facility_name = 'Apollo Pharmacy'
+AND df.facility_name = 'Apollo Hospital Chennai'
+
+UNION ALL
+
+SELECT
+    sf.facility_id,
+    df.facility_id,
+    m.medicine_id,
+    75,
+    180,
+    12.4,
+    91.0,
+    'Insulin shortage mitigation recommendation'
+FROM facilities sf
+JOIN facilities df
+ON sf.facility_id <> df.facility_id
+JOIN medicine_master m
+ON m.medicine_code = 'INS100'
+WHERE sf.facility_name = 'Government General Hospital'
+AND df.facility_name = 'SIMS Hospital'
+
+UNION ALL
+
+SELECT
+    sf.facility_id,
+    df.facility_id,
+    m.medicine_id,
+    50,
+    300,
+    5.2,
+    87.0,
+    'ORS redistribution due to local demand spike'
+FROM facilities sf
+JOIN facilities df
+ON sf.facility_id <> df.facility_id
+JOIN medicine_master m
+ON m.medicine_code = 'ORS001'
+WHERE sf.facility_name = 'MedPlus Pharmacy'
+AND df.facility_name = 'Apollo Hospital Chennai';

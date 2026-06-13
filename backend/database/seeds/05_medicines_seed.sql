@@ -8,19 +8,30 @@ INSERT INTO medicine_master (
     manufacturer,
     prescription_required,
     is_critical,
+    storage_conditions,
     standard_lead_time_days,
     safety_stock_days,
-    unit_price
+    unit_price,
+    expiry_alert_days
 )
 VALUES
-('MED001', 'Paracetamol 500mg', 'Paracetamol', 'Analgesic', 'Tablet', '500mg', 'Sun Pharma', FALSE, FALSE, 3, 5, 2.50),
-('MED002', 'Insulin Injection', 'Insulin', 'Diabetes', 'Injection', '100 IU', 'Novo Nordisk', TRUE, TRUE, 7, 10, 450.00),
-('MED003', 'Azithromycin 500mg', 'Azithromycin', 'Antibiotic', 'Tablet', '500mg', 'Cipla', TRUE, TRUE, 5, 7, 18.00),
-('MED004', 'Amoxicillin 250mg', 'Amoxicillin', 'Antibiotic', 'Capsule', '250mg', 'Mankind', TRUE, TRUE, 4, 5, 12.00),
-('MED005', 'Dolo 650', 'Paracetamol', 'Fever', 'Tablet', '650mg', 'Micro Labs', FALSE, FALSE, 2, 5, 3.50),
-('MED006', 'Salbutamol Inhaler', 'Salbutamol', 'Asthma', 'Inhaler', '100mcg', 'GSK', TRUE, TRUE, 6, 8, 220.00),
-('MED007', 'ORS Sachet', 'ORS', 'Hydration', 'Powder', '21g', 'Electral', FALSE, FALSE, 2, 10, 18.00),
-('MED008', 'Metformin 500mg', 'Metformin', 'Diabetes', 'Tablet', '500mg', 'Sun Pharma', TRUE, TRUE, 4, 8, 7.50),
-('MED009', 'Cetrizine 10mg', 'Cetirizine', 'Allergy', 'Tablet', '10mg', 'Cipla', FALSE, FALSE, 3, 5, 2.00),
-('MED010', 'Pantoprazole 40mg', 'Pantoprazole', 'Gastro', 'Tablet', '40mg', 'Dr Reddy', TRUE, TRUE, 4, 5, 9.00)
-ON CONFLICT DO NOTHING;
+
+('PCM500','Paracetamol','Acetaminophen','Analgesic','Tablet','500mg','Sun Pharma',FALSE,FALSE,'Store Below 25C',7,15,2.50,90),
+
+('DOLO650','Dolo 650','Paracetamol','Analgesic','Tablet','650mg','Micro Labs',FALSE,FALSE,'Store Below 25C',7,15,3.00,90),
+
+('AMX500','Amoxicillin','Amoxicillin','Antibiotic','Capsule','500mg','Cipla',TRUE,FALSE,'Store Below 25C',10,20,12.50,120),
+
+('AZI250','Azithromycin','Azithromycin','Antibiotic','Tablet','250mg','Sun Pharma',TRUE,FALSE,'Store Below 25C',10,20,15.00,120),
+
+('MET500','Metformin','Metformin','Diabetes','Tablet','500mg','Dr Reddys',TRUE,TRUE,'Store Below 25C',14,30,8.50,180),
+
+('INS100','Insulin','Human Insulin','Diabetes','Injection','100IU','Novo Nordisk',TRUE,TRUE,'Cold Storage',21,45,550.00,180),
+
+('ORS001','ORS Sachet','ORS','Electrolyte','Powder','21g','FDC',FALSE,FALSE,'Dry Storage',5,20,18.00,365),
+
+('SAL100','Salbutamol Inhaler','Salbutamol','Respiratory','Inhaler','100mcg','Cipla',TRUE,TRUE,'Store Below 25C',14,20,220.00,180),
+
+('ATOR10','Atorvastatin','Atorvastatin','Cardiac','Tablet','10mg','Pfizer',TRUE,FALSE,'Store Below 25C',14,20,12.00,180),
+
+('CEF200','Cefixime','Cefixime','Antibiotic','Tablet','200mg','Lupin',TRUE,FALSE,'Store Below 25C',10,20,25.00,180);
