@@ -87,6 +87,17 @@ class DashboardService:
 
     def get_inventory_health_summary(self):
 
+        safe_count = {
+            self.db.execute(
+                select(func.count())
+                .where(
+                    InventoryCurrent.severity ==
+                    SeverityEnum.SAFE
+                )
+            )
+            .scalar()
+        }
+
         warning_count = (
             self.db.execute(
                 select(func.count())
@@ -121,6 +132,10 @@ class DashboardService:
         )
 
         return {
+
+            "safe_inventory":
+                safe_count,
+
             "warning_inventory":
                 warning_count,
 
@@ -293,6 +308,16 @@ class DashboardService:
                     "total_inventory_records"
                 ],
 
+            "safe_inventory":
+                inventory[
+                    "safe_inventory"
+                ],
+
+            "warning_inventory":
+                inventory[
+                    "warning_inventory"
+                ],
+            
             "critical_inventory":
                 inventory[
                     "critical_inventory"

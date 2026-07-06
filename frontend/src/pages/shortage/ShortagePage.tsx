@@ -3,13 +3,17 @@ import { toast } from 'sonner'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { KPICard } from '../../components/ui/KPICard'
-import { mockShortages } from '../../lib/mockData'
+import type { Shortage } from '../../types'
 
 const sevVariant = { emergency:'red', critical:'red', warning:'yellow' } as const
 const sevLabel = { emergency:'Emergency', critical:'Critical', warning:'Warning' } as const
 
 export function ShortagePage() {
-  const shortages = mockShortages
+  const shortages: Shortage[] = [
+    { id: 'S1', medicine: 'Insulin', facility: 'City General', severity: 'emergency', stock: '12 units', daysLeft: 0, nearestSource: 'Apollo Hospital' },
+    { id: 'S2', medicine: 'Oxygen', facility: 'Narayana Health', severity: 'critical', stock: '84 units', daysLeft: 2, nearestSource: 'Fortis BBT' },
+    { id: 'S3', medicine: 'Amoxicillin', facility: 'Victoria Hospital', severity: 'warning', stock: '180 units', daysLeft: 6, nearestSource: 'Manipal Hospital' },
+  ]
 
   function handleAction(_id: string, sev: string) {
     if (sev === 'emergency') {

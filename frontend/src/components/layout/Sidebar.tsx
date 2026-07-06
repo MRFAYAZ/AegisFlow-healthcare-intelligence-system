@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAppStore } from '../../store/useAppStore'
+import { useEmergencies } from '../../hooks/useEmergency'
 
 const navItems = [
   { section:'Overview', items:[
@@ -21,14 +21,16 @@ const navItems = [
 ]
 
 export function Sidebar() {
-  const { user, setUser } = useAppStore()
+  const user = {
+    name: "Aegisflow Admin",
+    role: "system_admin"
+  }
   const navigate = useNavigate()
-  const { emergencies } = useAppStore()
-  const activeEmer = emergencies.filter(e => e.status !== 'resolved').length
+  const { data: emergencies = [] } = useEmergencies()
+  const activeEmer = emergencies.length
 
   function logout() {
     localStorage.removeItem('aegisflow_token')
-    setUser(null)
     navigate('/login')
   }
 

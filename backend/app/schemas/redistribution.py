@@ -1,6 +1,8 @@
 from uuid import UUID
 from datetime import datetime
 
+
+
 from pydantic import (
     BaseModel,
     Field
@@ -23,6 +25,8 @@ class TransferRequestCreate(BaseModel):
 
     from_facility_id: UUID
 
+    emergency_case_id: UUID
+
     to_facility_id: UUID
 
     medicine_id: UUID
@@ -40,11 +44,16 @@ class TransferResponse(BaseSchema):
 
     transfer_id: UUID
 
+    emergency_case_id: UUID | None = None
+
     from_facility_id: UUID
+    from_facility_name: str
 
     to_facility_id: UUID
+    to_facility_name: str
 
     medicine_id: UUID
+    medicine_name: str
 
     requested_quantity: int
 

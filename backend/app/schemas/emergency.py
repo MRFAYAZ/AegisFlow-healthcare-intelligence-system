@@ -8,7 +8,8 @@ from pydantic import (
 
 from app.core.enums import (
     SeverityEnum,
-    EmergencyStatusEnum
+    EmergencyStatusEnum,
+    TransferStatusEnum
 )
 
 from app.schemas.common import (
@@ -51,8 +52,10 @@ class EmergencyResponse(BaseSchema):
     emergency_case_id: UUID
 
     facility_id: UUID
+    facility_name: str
 
     medicine_id: UUID
+    medicine_name: str
 
     shortage_score: float
 
@@ -70,7 +73,29 @@ class EmergencyResponse(BaseSchema):
 
     resolved_at: datetime | None = None
 
+    # ---------------------------
+    # AI Recommendation
+    # ---------------------------
 
+    transfer_id: UUID | None = None
+
+    donor_facility: str | None = None
+
+    transfer_status: TransferStatusEnum | None = None
+
+    approved_quantity: int | None = None
+
+    match_score: float | None = None
+
+    transfer_distance_km: float | None = None
+
+    cascade_safe: bool | None = None
+
+    estimated_eta_minutes: int | None = None
+
+    ai_reason: str | None = None
+
+    alternative_donors:int | None = None
 # =========================================================
 # EMERGENCY MATCH RESPONSE
 # =========================================================

@@ -9,6 +9,7 @@ import { TransfersPage } from '../pages/transfers/TransfersPage'
 import { AnalyticsPage } from '../pages/analytics/AnalyticsPage'
 import { MapPage } from '../pages/map/MapPage'
 import { ShopPage } from '../pages/shop/ShopPage'
+import { RouteErrorPage } from '../pages/error/RouteErrorPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('aegisflow_token')
@@ -17,7 +18,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 const router = createBrowserRouter([
-  { path:'/login', element:<LoginPage /> },
+  { path:'/login', element:<LoginPage />, errorElement:<RouteErrorPage /> },
   {
     path:'/',
     element:<ProtectedRoute><AppLayout /></ProtectedRoute>,
@@ -31,7 +32,8 @@ const router = createBrowserRouter([
       { path:'analytics', element:<AnalyticsPage /> },
       { path:'map', element:<MapPage /> },
       { path:'shop', element:<ShopPage /> },
-    ]
+    ],
+    errorElement:<RouteErrorPage />,
   },
   { path:'*', element:<Navigate to="/dashboard" replace /> },
 ])

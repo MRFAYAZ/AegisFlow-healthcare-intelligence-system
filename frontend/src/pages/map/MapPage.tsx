@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Badge } from '../../components/ui/Badge'
-import { mockFacilities } from '../../lib/mockData'
 import type { Facility } from '../../types'
+import { useFacilities } from '../../hooks/useFacilities'
 
 const statusColor: Record<Facility['status'], string> = {
   emergency:'#dc2626', critical:'#ea580c', low:'#d97706', stocked:'#16a34a'
@@ -11,7 +11,9 @@ const statusVariant: Record<Facility['status'], 'red'|'orange'|'yellow'|'green'>
 }
 
 export function MapPage() {
+  const { data: facilities = [] } = useFacilities()
   const [selected, setSelected] = useState<Facility|null>(null)
+  const facilityList = facilities as Facility[]
 
   return (
     <div>
@@ -27,7 +29,7 @@ export function MapPage() {
               <path d="M80,300 Q200,240 340,260 Q480,280 600,220" stroke="#c8c4bc" strokeWidth="2" fill="none"/>
               <path d="M100,180 Q240,160 340,200 Q440,240 580,200" stroke="#c8c4bc" strokeWidth="1.5" fill="none"/>
               <ellipse cx="340" cy="240" rx="220" ry="150" fill="rgba(37,99,235,0.03)" stroke="rgba(37,99,235,0.08)" strokeWidth="1" strokeDasharray="6,4"/>
-              {mockFacilities.map(f => {
+              {facilityList.map((f) => {
                 const x = (f.lng - 77.55) * 3000 + 100
                 const y = (12.99 - f.lat) * 3000 + 80
                 const c = statusColor[f.status]
@@ -78,8 +80,8 @@ export function MapPage() {
 
           {/* All facilities list */}
           <div className="panel flex-1">
-            <div className="panel-title mb-3">All facilities ({mockFacilities.length})</div>
-            {mockFacilities.map(f => (
+            <div className="panel-title mb-3">All facilities ({facilityList.length})</div>
+            {facilityList.map((f) => (
               <div key={f.id}
                 className={`flex items-center gap-2.5 py-2 border-b border-border last:border-b-0 cursor-pointer hover:bg-surface-muted rounded px-1 -mx-1 transition-colors ${selected?.id===f.id?'bg-blue-50':''}`}
                 onClick={() => setSelected(f)}

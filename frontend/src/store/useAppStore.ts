@@ -1,40 +1,25 @@
 import { create } from 'zustand'
-import type { Emergency, Transfer, Medicine, User } from '../types'
-import { mockEmergencies, mockInventory, mockTransfers } from '../lib/mockData'
+import type { Medicine, User } from '../types'
+import type { Transfer } from '../types/transfer'
 
-interface AppStore {
+interface AppState {
   user: User | null
-  emergencies: Emergency[]
-  inventory: Medicine[]
+  inventoryItems: Medicine[]
   transfers: Transfer[]
-  setUser: (u: User | null) => void
-  updateEmergencyStatus: (id: string, status: Emergency['status']) => void
-  updateTransferStatus: (id: string, status: Transfer['status'], eta?: string) => void
+  setUser: (user: User | null) => void
   addInventoryItem: (item: Medicine) => void
-  addTransfer: (t: Transfer) => void
+  addTransfer: (transfer: Transfer) => void
+  updateTransferStatus: (id: string, status: Transfer['status'], eta: string) => void
 }
 
-export const useAppStore = create<AppStore>((set) => ({
+export const useAppStore = create<AppState>((set) => ({
   user: null,
-  emergencies: mockEmergencies,
-  inventory: mockInventory,
-  transfers: mockTransfers,
-
+  inventoryItems: [],
+  transfers: [],
   setUser: (user) => set({ user }),
-
-  updateEmergencyStatus: (id, status) =>
-    set((s) => ({
-      emergencies: s.emergencies.map((e) => e.id === id ? { ...e, status } : e),
-    })),
-
-  updateTransferStatus: (id, status, eta) =>
-    set((s) => ({
-      transfers: s.transfers.map((t) => t.id === id ? { ...t, status, ...(eta ? { eta } : {}) } : t),
-    })),
-
-  addInventoryItem: (item) =>
-    set((s) => ({ inventory: [item, ...s.inventory] })),
-
-  addTransfer: (t) =>
-    set((s) => ({ transfers: [t, ...s.transfers] })),
+  addInventoryItem: (item) => set((state) => ({ inventoryItems: [...state.inventoryItems, item] })),
+  addTransfer: (transfer) => set((state) => ({ transfers: [...state.transfers, transfer] })),
+  updateTransferStatus: (id, status, eta) => set((state) => ({
+    transfers: state.transfers.map((transfer) => transfer.id === id ? { ...transfer, status, eta } : transfer),
+  })),
 }))

@@ -42,8 +42,9 @@ export const inventoryAPI = {
 // Emergencies
 export const emergencyAPI = {
   getAll: () => api.get('/emergencies'),
-  activate: (id: string, data: unknown) => api.post(`/emergencies/${id}/activate`, data),
-  resolve: (id: string) => api.post(`/emergencies/${id}/resolve`),
+  getActive: () => api.get('/emergencies/active'),
+  getCritical: () => api.get('/emergencies/critical'),
+  getDashboard: () => api.get('/emergencies/dashboard'),
 }
 
 // Transfers
@@ -62,8 +63,7 @@ export const shortageAPI = {
 
 // Analytics
 export const analyticsAPI = {
-  getDashboard: () => api.get('/analytics/dashboard'),
-  getTrends: () => api.get('/analytics/trends'),
+  getDashboard: () => api.get('/dashboard/review')
 }
 
 // Facilities
@@ -71,4 +71,18 @@ export const facilitiesAPI = {
   getAll: () => api.get('/facilities'),
   getNearby: (lat: number, lng: number, radius: number) =>
     api.get(`/facilities/nearby?lat=${lat}&lng=${lng}&radius=${radius}`),
+}
+
+export const redistributionAPI = {
+  getAll: () =>
+    api.get('/redistribution'),
+
+  getDashboard: () =>
+    api.get('/redistribution/dashboard'),
+
+  getHighPriority: () =>
+    api.get('/redistribution/high-priority'),
+
+  dispatch: (emergencyCaseId: string) =>
+    api.post('/redistribution/dispatch', { emergency_case_id: emergencyCaseId }),
 }

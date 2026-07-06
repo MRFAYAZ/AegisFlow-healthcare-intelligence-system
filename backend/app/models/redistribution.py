@@ -51,6 +51,17 @@ class TransferRequest(Base, TimestampMixin):
         nullable=False
     )
 
+    emergency_case_id: Mapped[uuid.UUID | None]  = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("emergency_cases.emergency_case_id"),
+        nullable=True
+    )
+
+    emergency_case = relationship(
+        "EmergencyCase",
+        back_populates="transfer_requests"
+    )
+
     requested_quantity: Mapped[int] = mapped_column(
         Integer,
         nullable=False

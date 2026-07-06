@@ -1,8 +1,12 @@
 from sqlalchemy.orm import Session
 
+from app.core.enums import TransferStatusEnum
+from app.models.redistribution import TransferRequest
 from app.repositories.inventory_repository import (
     InventoryRepository
 )
+
+from app.repositories.emergency_repository import EmergencyRepository
 
 from app.repositories.redistribution_repository import (
     RedistributionRepository
@@ -21,6 +25,10 @@ class RedistributionService:
 
         self.redistribution_repository = (
             RedistributionRepository(db)
+        )
+
+        self.emergency_repository = (
+            EmergencyRepository(db)
         )
 
     # =====================================================
@@ -162,3 +170,36 @@ class RedistributionService:
             self.redistribution_repository
             .get_dashboard()
         )
+
+    def dispatch_transfer(self, emergency_case_id):
+        emergency = self.emergency_repository.get_all_emergencies()
+        matching_emergency = next(
+            (item for item in emergency if str(item["emergency_case_id"]) == str(emergency_case_id)),
+            None,
+        )
+
+        if not matching_emergency:
+            raise ValueError("Emergency not found.")
+
+        transfer_id = matching_emergency.get("transfer_id")
+        if not transfer_id:
+            raise ValueError("No transfer recommendation available.")
+
+        transfer = self.db.get(TransferRequest, transfer_id)
+        if transfer is None:
+            raise ValueError("Transfer not found.")
+
+        transfer.transfer_status = TransferStatusEnum.PENDING
+        transfer.recommendation_reason = matching_emergency.get("recommendation_reason") or "Highest inventory with minimum delivery distance."
+        transfer.match_score = matching_emergency.get("match_score")
+        transfer.transfer_distance_km = matching_emergency.get("transfer_distance_km")
+        transfer.cascade_safe = matching_emergency.get("cascade_safe")
+        self.db.commit()
+        self.db.refresh(transfer)
+
+        return {
+            "emergency_case_id": emergency_case_id,
+            "transfer_id": str(transfer_id),
+            "transfer_status": transfer.transfer_status.value,
+            "message": "Dispatch request confirmed. Donor hospital has been notified.",
+        }

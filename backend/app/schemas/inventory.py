@@ -74,3 +74,25 @@ class InventoryResponse(BaseSchema):
     shortage_score: float
 
     severity: SeverityEnum
+
+# =========================================================
+# INVENTORY LIST RESPONSE
+# =========================================================
+
+class InventoryListResponse(BaseSchema):
+
+    inventory_id: UUID
+
+    facility_name: str
+
+    medicine_name: str
+
+    total_stock: int
+
+    available_stock: int
+
+    reserved_stock: int
+
+    shortage_score: float
+
+    severity: SeverityEnum

@@ -17,6 +17,10 @@ from app.schemas.inventory import (
     InventoryResponse
 )
 
+from app.schemas.inventory import (
+    InventoryListResponse
+)
+
 router = APIRouter(
     prefix="/inventory",
     tags=["Inventory"]
@@ -29,7 +33,7 @@ router = APIRouter(
 
 @router.get(
     "",
-    response_model=list[InventoryResponse]
+    response_model=list[InventoryListResponse]
 )
 def get_all_inventory(
     db: Session = Depends(get_db)

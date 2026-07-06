@@ -107,10 +107,39 @@ class InventoryService:
 
     def get_all_inventory(self):
 
-        return (
+        inventory = (
             self.inventory_repository
             .get_all_inventory()
         )
+
+        return [
+            {
+                "inventory_id":
+                    item.inventory_id,
+
+                "facility_name":
+                    item.facility.facility_name,
+
+                "medicine_name":
+                    item.medicine.medicine_name,
+
+                "total_stock":
+                    item.total_stock,
+
+                "available_stock":
+                    item.available_stock,
+
+                "reserved_stock":
+                    item.reserved_stock,
+
+                "shortage_score":
+                    item.shortage_score,
+
+                "severity":
+                    item.severity
+            }
+            for item in inventory
+        ]
 
 
     # =====================================================

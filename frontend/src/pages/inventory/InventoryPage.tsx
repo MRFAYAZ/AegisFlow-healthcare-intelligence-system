@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { useAppStore } from '../../store/useAppStore'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import type { Medicine } from '../../types'
 import { useInventory } from '../../hooks/useInventory'
+import { useAppStore } from '../../store/useAppStore'
 
 const statusVariant: Record<Medicine['status'], 'red'|'orange'|'yellow'|'green'> = {
   emergency:'red', critical:'orange', warning:'yellow', adequate:'green'
@@ -85,22 +85,24 @@ function RequestModal({ medicine, onClose }: { medicine: Medicine; onClose: () =
 }
 
 export function InventoryPage() {
-  const {data: inventory = [], isLoading} = useInventory()
+  const {data: inventory = [], isLoading } = useInventory()
   const [addOpen, setAddOpen] = useState(false)
   const [reqMed, setReqMed] = useState<Medicine|null>(null)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all'|'critical'|'warning'|'adequate'>('all')
 
   if (isLoading) {
+    return (
+      <div className="panel">
+        Loading inventory...
+      </div>
+    )
+  }
 
-  return (
-    <div className="panel">
-      Loading inventory...
-    </div>
-  )
-}
+  const transformedInventory: Medicine[] = inventory.map((item: any) => ({ id: item.inventory_id, name: item.medicine_name || item.medicine_id, 
+  details: `Facility: ${  item.facility_name || item.facility_id }`, category: item.category || 'Medicine', stock: item.available_stock, maxStock: item.total_stock, expiry: 'N/A', unit: 'Units', status: item.severity === 'SAFE' ? 'adequate' : item.severity === 'WARNING' ? 'warning' : item.severity === 'CRITICAL' ? 'critical' : 'emergency' }))
 
-  const filtered = inventory.filter(item => {
+  const filtered = transformedInventory.filter(item => {
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase())
     const matchFilter = filter==='all' || item.status===filter || (filter==='critical' && (item.status==='critical'||item.status==='emergency'))
     return matchSearch && matchFilter
@@ -133,7 +135,7 @@ export function InventoryPage() {
             </thead>
             <tbody>
               {filtered.map(item => {
-                const pct = Math.round((item.stock / item.maxStock) * 100)
+                const pct = item.maxStock > 0 ? Math.round((item.stock / item.maxStock) * 100) : 0
                 return (
                   <tr key={item.id}>
                     <td>

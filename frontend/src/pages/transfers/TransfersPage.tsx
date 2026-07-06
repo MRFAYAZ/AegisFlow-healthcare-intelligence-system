@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { useAppStore } from '../../store/useAppStore'
+import { useTransfers } from '../../hooks/useTransfers'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import type { Transfer } from '../../types'
+import { useAppStore } from '../../store/useAppStore'
 
 const stVariant = { in_transit:'blue', pending:'yellow', delivered:'green', sourcing:'orange' } as const
 const stLabel = { in_transit:'In transit', pending:'Pending', delivered:'Delivered', sourcing:'Sourcing' } as const
 
 function TrackModal({ transfer, onClose }: { transfer: Transfer; onClose: () => void }) {
-  const { updateTransferStatus } = useAppStore()
+  const { updateTransferStatus } = useTransfers()
   function deliver() {
     updateTransferStatus(transfer.id, 'delivered', 'Done')
     toast.success(`${transfer.medicine} delivered to ${transfer.to}`)
@@ -67,7 +68,7 @@ function NewTransferModal({ onClose }: { onClose: () => void }) {
 }
 
 export function TransfersPage() {
-  const { transfers, updateTransferStatus } = useAppStore()
+  const { data: transfers = [], updateTransferStatus } = useTransfers()
   const [trackTf, setTrackTf] = useState<Transfer|null>(null)
   const [newOpen, setNewOpen] = useState(false)
 

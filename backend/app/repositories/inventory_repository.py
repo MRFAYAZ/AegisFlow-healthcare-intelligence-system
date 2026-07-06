@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
 from app.models.inventory import InventoryCurrent
 from app.core.enums import SeverityEnum
@@ -93,7 +94,17 @@ class InventoryRepository(BaseRepository):
 
     def get_all_inventory(self):
 
-        query = select(InventoryCurrent)
+        query = (
+            select(InventoryCurrent)
+            .options(
+                joinedload(
+                    InventoryCurrent.medicine
+                ),
+                joinedload(
+                    InventoryCurrent.facility
+                )
+            )
+        )
 
         return (
             self.db.execute(query)

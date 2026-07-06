@@ -1,4 +1,11 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+    aliased
+)
+
+from app.models.facility import Facility
+from app.models.medicine import Medicine
+
 from sqlalchemy import select
 
 from app.models.redistribution import (
@@ -45,23 +52,68 @@ class RedistributionRepository(
         self,
         facility_id
     ):
-
+        SourceFacility = aliased(Facility)
+        DestinationFacility = aliased(Facility)
         query = (
-            select(TransferRequest)
+            select(
+                TransferRequest.transfer_id,
+
+                TransferRequest.emergency_case_id,
+
+                TransferRequest.from_facility_id,
+                SourceFacility.facility_name.label(
+                    "from_facility_name"
+                ),
+
+                TransferRequest.to_facility_id,
+                DestinationFacility.facility_name.label(
+                    "to_facility_name"
+                ),
+
+                TransferRequest.medicine_id,
+                Medicine.medicine_name,
+
+                TransferRequest.requested_quantity,
+                TransferRequest.approved_quantity,
+
+                TransferRequest.transfer_status,
+
+                TransferRequest.cascade_safe,
+
+                TransferRequest.match_score,
+                
+                TransferRequest.transfer_distance_km,
+
+                TransferRequest.recommendation_reason,
+
+                TransferRequest.requested_at,
+
+                TransferRequest.completed_at
+            )
+            .join(
+                SourceFacility,
+                TransferRequest.from_facility_id == SourceFacility.facility_id
+            )
+            .join(
+                DestinationFacility,
+                TransferRequest.to_facility_id == DestinationFacility.facility_id
+            )
+            .join(
+                Medicine,
+                TransferRequest.medicine_id == Medicine.medicine_id
+            )
             .where(
                 (
-                    TransferRequest.from_facility_id
-                    == facility_id
+                    TransferRequest.from_facility_id == facility_id
                 )
                 |
                 (
-                    TransferRequest.to_facility_id
-                    == facility_id
+                    TransferRequest.to_facility_id == facility_id
                 )
             )
         )
 
-        return self.db.execute(query).scalars().all()
+        return self.db.execute(query).mappings().all()
 
     # =====================================================
     # CREATE TRANSFER REQUEST
@@ -90,11 +142,62 @@ class RedistributionRepository(
 
     def get_all_transfers(self):
 
-        query = select(TransferRequest)
+        SourceFacility = aliased(Facility)
+        DestinationFacility = aliased(Facility)
+
+        query = (
+            select(
+                TransferRequest.transfer_id,
+
+                TransferRequest.emergency_case_id,
+                
+                TransferRequest.from_facility_id,
+                SourceFacility.facility_name.label(
+                    "from_facility_name"
+                ),
+
+                TransferRequest.to_facility_id,
+                DestinationFacility.facility_name.label(
+                    "to_facility_name"
+                ),
+
+                TransferRequest.medicine_id,
+                Medicine.medicine_name,
+
+                TransferRequest.requested_quantity,
+                TransferRequest.approved_quantity,
+
+                TransferRequest.transfer_status,
+
+                TransferRequest.cascade_safe,
+
+                TransferRequest.match_score,
+                
+                TransferRequest.transfer_distance_km,
+
+                TransferRequest.recommendation_reason,
+
+                TransferRequest.requested_at,
+
+                TransferRequest.completed_at
+            )
+            .join(
+                SourceFacility,
+                TransferRequest.from_facility_id == SourceFacility.facility_id
+            )
+            .join(
+                DestinationFacility,
+                TransferRequest.to_facility_id == DestinationFacility.facility_id
+            )
+            .join(
+                Medicine,
+                TransferRequest.medicine_id == Medicine.medicine_id
+            )
+        )
 
         return (
             self.db.execute(query)
-            .scalars()
+            .mappings()
             .all()
         )
 
@@ -105,8 +208,57 @@ class RedistributionRepository(
 
     def get_high_priority_transfers(self):
 
+        SourceFacility = aliased(Facility)
+        DestinationFacility = aliased(Facility)
+
         query = (
-            select(TransferRequest)
+            select(
+                TransferRequest.transfer_id,
+
+                TransferRequest.emergency_case_id,
+
+                TransferRequest.from_facility_id,
+                SourceFacility.facility_name.label(
+                    "from_facility_name"
+                ),
+
+                TransferRequest.to_facility_id,
+                DestinationFacility.facility_name.label(
+                    "to_facility_name"
+                ),
+
+                TransferRequest.medicine_id,
+                Medicine.medicine_name,
+
+                TransferRequest.requested_quantity,
+                TransferRequest.approved_quantity,
+
+                TransferRequest.transfer_status,
+
+                TransferRequest.cascade_safe,
+
+                TransferRequest.match_score,
+                
+                TransferRequest.transfer_distance_km,
+
+                TransferRequest.recommendation_reason,
+
+                TransferRequest.requested_at,
+
+                TransferRequest.completed_at
+            )
+            .join(
+                SourceFacility,
+                TransferRequest.from_facility_id == SourceFacility.facility_id
+            )
+            .join(
+                DestinationFacility,
+                TransferRequest.to_facility_id == DestinationFacility.facility_id
+            )
+            .join(
+                Medicine,
+                TransferRequest.medicine_id == Medicine.medicine_id
+            )
             .where(
                 TransferRequest.match_score >= 80
             )
@@ -114,7 +266,7 @@ class RedistributionRepository(
 
         return (
             self.db.execute(query)
-            .scalars()
+            .mappings()
             .all()
         )
 
@@ -129,7 +281,7 @@ class RedistributionRepository(
 
         high_priority = [
             t for t in transfers
-            if t.match_score and t.match_score >= 80
+            if t.match_score is not None and t.match_score >= 80
         ]
 
         avg_score = 0

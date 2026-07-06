@@ -4,6 +4,7 @@ from fastapi import (
     APIRouter,
     Depends
 )
+from pydantic import BaseModel
 
 from sqlalchemy.orm import Session
 
@@ -21,6 +22,10 @@ router = APIRouter(
     prefix="/redistribution",
     tags=["Redistribution"]
 )
+
+
+class DispatchRequest(BaseModel):
+    emergency_case_id: UUID
 
 @router.get(
     "",
@@ -67,3 +72,17 @@ def get_dashboards(
     service = RedistributionService(db)
 
     return service.get_dashboard()
+
+
+@router.post(
+    "/dispatch"
+)
+def dispatch_transfer(
+    payload: DispatchRequest,
+    db: Session = Depends(get_db)
+):
+    service = RedistributionService(db)
+
+    return service.dispatch_transfer(
+        payload.emergency_case_id
+    )

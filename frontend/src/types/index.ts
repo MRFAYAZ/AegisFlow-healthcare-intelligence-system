@@ -1,5 +1,7 @@
 export type Role = 'system_admin' | 'hospital_admin' | 'pharmacist' | 'shop_owner' | 'emergency_operator'
 
+export type { Transfer } from './transfer'
+
 export interface User {
   id: string
   name: string
@@ -21,29 +23,8 @@ export interface Medicine {
   unit: string
 }
 
-export interface Emergency {
-  id: string
-  medicine: string
-  facility: string
-  units: number
-  severity: 'emergency' | 'critical'
-  donor: string
-  donorUnits: number
-  distance: string
-  eta: string
-  status: 'pending' | 'in_transit' | 'sourcing' | 'resolved'
-}
 
-export interface Transfer {
-  id: string
-  medicine: string
-  from: string
-  to: string
-  quantity: string
-  status: 'pending' | 'in_transit' | 'delivered' | 'sourcing'
-  eta: string
-  createdAt: string
-}
+
 
 export interface Shortage {
   id: string

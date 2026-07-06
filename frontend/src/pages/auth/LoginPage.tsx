@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useAppStore } from '../../store/useAppStore'
 import { authAPI } from '../../services/api'
+import { useAppStore } from '../../store/useAppStore'
 
 const DEMO_USERS = [
   {

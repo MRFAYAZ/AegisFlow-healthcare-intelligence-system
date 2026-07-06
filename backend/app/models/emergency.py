@@ -38,6 +38,10 @@ class EmergencyCase(Base, TimestampMixin):
         default=uuid.uuid4
     )
 
+    transfer_requests = relationship(
+        "TransferRequest",
+        back_populates="emergency_case"
+    )
     facility_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("facilities.facility_id"),
         nullable=False
