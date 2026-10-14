@@ -146,3 +146,9 @@ class TransferRequest(Base, TimestampMixin):
         back_populates="transfer",
         uselist=False
     )
+    
+    batch_allocations = relationship(
+        "TransferBatchAllocation",
+        back_populates="transfer",
+        cascade="all, delete-orphan"
+    )
