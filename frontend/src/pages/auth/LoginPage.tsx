@@ -46,11 +46,17 @@ export function LoginPage() {
         token
       )
 
+      const meResponse = await authAPI.me()
+      const currentUser = meResponse.data
+      const normalizedRole = String(currentUser.role).toUpperCase() === "SUPPLIER_MANAGER"
+        ? "supplier"
+        : String(currentUser.role).toLowerCase()
+
       setUser({
-        id: 'authenticated-user',
-        name: email,
-        email,
-        role: 'system_admin'
+        id: String(currentUser.user_id),
+        name: String(currentUser.full_name),
+        email: String(currentUser.email),
+        role: normalizedRole,
       })
 
       toast.success(
@@ -63,8 +69,9 @@ export function LoginPage() {
 
       console.error(error)
 
+      localStorage.removeItem('aegisflow_token')
       toast.error(
-        'Invalid credentials'
+        'Login failed. Check credentials and API availability.'
       )
 
     } finally {
