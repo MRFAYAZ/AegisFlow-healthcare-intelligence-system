@@ -475,6 +475,14 @@ class RedistributionService:
                     .with_for_update()
                 ).scalar_one_or_none()
                 if emergency is not None:
+                    # The emergency stores its target quantity and its current
+                    # available quantity at the receiving facility. Reflect this
+                    # delivery before deciding whether the target is satisfied.
+                    emergency.available_quantity = (
+                        int(emergency.available_quantity or 0) + quantity
+                    )
+                    self.db.flush()
+
                     completed_quantity = self.db.execute(
                         select(func.coalesce(func.sum(TransferRequest.approved_quantity), 0))
                         .where(
@@ -482,17 +490,18 @@ class RedistributionService:
                             TransferRequest.transfer_status == TransferStatusEnum.COMPLETED,
                         )
                     ).scalar_one()
-                    fulfilled = int(completed_quantity or 0)
+                    fulfilled_transfer_quantity = int(completed_quantity or 0)
                     required = int(emergency.required_quantity or 0)
-                    if fulfilled >= required and required > 0:
+                    if int(emergency.available_quantity or 0) >= required and required > 0:
                         emergency.emergency_status = EmergencyStatusEnum.RESOLVED
                         emergency.resolved_at = now
-                    elif fulfilled > 0:
+                    elif fulfilled_transfer_quantity > 0:
                         emergency.emergency_status = EmergencyStatusEnum.PARTIALLY_RESOLVED
                         emergency.resolved_at = None
                     emergency_payload = {
                         "emergency_case_id": emergency.emergency_case_id,
-                        "fulfilled_quantity": fulfilled,
+                        "available_quantity": int(emergency.available_quantity or 0),
+                        "completed_transfer_quantity": fulfilled_transfer_quantity,
                         "required_quantity": required,
                         "status": emergency.emergency_status.value,
                     }
