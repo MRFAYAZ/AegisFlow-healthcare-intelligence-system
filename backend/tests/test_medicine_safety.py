@@ -17,8 +17,10 @@ class Lot:
 
 
 def test_safe_quantity_is_bounded_by_stock_surplus_and_verified_lots():
-    assert safe_transferable_quantity(100, 20, 35) == 35
+    assert safe_transferable_quantity(100, 20, 35) == 15
     assert safe_transferable_quantity(30, 20, 50) == 10
+    # Expired/unverified aggregate stock cannot be counted toward the safety buffer.
+    assert safe_transferable_quantity(100, 20, 15) == 0
     assert safe_transferable_quantity(20, 20, 50) == 0
 
 
