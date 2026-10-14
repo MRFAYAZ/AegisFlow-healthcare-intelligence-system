@@ -101,12 +101,19 @@ class MatchingService:
             if transferable_quantity <= 0:
                 continue
 
-            distance_km = haversine_km(
-                float(requesting_location.latitude),
-                float(requesting_location.longitude),
-                float(location.latitude),
-                float(location.longitude),
-            )
+            # Missing donor coordinates make this facility unrankable.
+            # Exclude the candidate without aborting other available matches.
+            if location.latitude is None or location.longitude is None:
+                continue
+            try:
+                distance_km = haversine_km(
+                    float(requesting_location.latitude),
+                    float(requesting_location.longitude),
+                    float(location.latitude),
+                    float(location.longitude),
+                )
+            except (TypeError, ValueError):
+                continue
             if max_distance_km is not None and distance_km > float(max_distance_km):
                 continue
 
