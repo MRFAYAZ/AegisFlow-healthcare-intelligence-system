@@ -41,8 +41,9 @@ export function TransfersPage() {
     user?.role === "system_admin"
     || (user?.role === "hospital_admin" && Boolean(user.facilityIds?.includes(transfer.to_facility_id)))
   const { data: transfers = [], isLoading, isError, error } = useQuery<TransferRecord[]>({
-    queryKey: ["transfers", "backend"],
+    queryKey: ["transfers", "backend", user?.id ?? "anonymous"],
     queryFn: async () => (await transferAPI.getAll()).data as TransferRecord[],
+    enabled: Boolean(user?.id),
     refetchInterval: 10_000,
     refetchOnWindowFocus: true,
   })
