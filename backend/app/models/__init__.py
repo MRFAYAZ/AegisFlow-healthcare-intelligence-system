@@ -25,3 +25,5 @@ from app.models.emergency import (
 from app.models.dispatch import TransferDispatch
 
 from app.models.transfer_batch_allocation import TransferBatchAllocation
+
+from app.models.emergency_timeline_event import EmergencyTimelineEvent
