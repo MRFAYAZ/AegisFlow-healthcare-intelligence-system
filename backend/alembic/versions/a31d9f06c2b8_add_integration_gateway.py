@@ -29,6 +29,7 @@ def upgrade() -> None:
         sa.Column("last_snapshot_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("created_at", sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.text("now()")),
         sa.Column("updated_at", sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.UniqueConstraint("facility_id", name="uq_integration_source_facility"),
     )
     op.create_index("idx_integration_sources_facility", "integration_sources", ["facility_id"])
 
