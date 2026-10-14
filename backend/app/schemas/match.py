@@ -24,6 +24,8 @@ class EmergencyMatchResponse(BaseModel):
     distance_km: float = Field(ge=0, description="Straight-line geographic distance, not road distance.")
     ranking_score: float = Field(ge=0, le=100)
     score_breakdown: MatchScoreBreakdown
+    requires_cold_chain: bool
+    cold_chain_capable: bool
     batch_traceability: str
     eligible_batch_count: int = Field(ge=0)
     nearest_expiry_date: str
