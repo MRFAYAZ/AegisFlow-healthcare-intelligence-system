@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { emergencyAPI } from "../services/api"
 import type { Emergency } from "../types/emergency"
 
-export function useEmergencies() {
+export function useEmergencies(enabled = true) {
 
     return useQuery<Emergency[]>({
 
@@ -14,6 +14,7 @@ export function useEmergencies() {
         },
         refetchInterval: 5000,
         refetchOnWindowFocus: true,
+        enabled,
     })
 
 }
