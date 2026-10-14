@@ -12,6 +12,7 @@ interface NetworkFacility {
   lng: number
   address: string
   active: boolean
+  coldChainCapable: boolean
 }
 
 function normalizeFacility(raw: unknown): NetworkFacility | null {
@@ -41,6 +42,7 @@ function normalizeFacility(raw: unknown): NetworkFacility | null {
     lng,
     address: addressParts.join(", ") || "Address not provided",
     active: candidate.is_active !== false,
+    coldChainCapable: candidate.cold_chain_capable === true,
   }
 }
 
@@ -134,6 +136,9 @@ export function EmergencyMap() {
                       <div className="mt-1 text-xs uppercase tracking-wide text-slate-500">
                         {facility.active ? "Active" : "Inactive"}
                       </div>
+                      <div className="mt-1 text-xs text-slate-600">
+                        Cold-chain capability: {facility.coldChainCapable ? "Declared" : "Not declared"}
+                      </div>
                     </div>
                   </Popup>
                 </Marker>
@@ -148,6 +153,7 @@ export function EmergencyMap() {
                   <p className="text-sm font-semibold text-slate-900">{selectedFacility.name}</p>
                   <p className="text-sm text-slate-500">{selectedFacility.address}</p>
                   <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">{selectedFacility.facilityType}</p>
+                  <p className="mt-1 text-xs text-slate-600">Cold-chain capability: {selectedFacility.coldChainCapable ? "Declared" : "Not declared"}</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-medium ${selectedFacility.active ? "bg-blue-100 text-blue-800" : "bg-slate-200 text-slate-700"}`}>
                   {selectedFacility.active ? "Active" : "Inactive"}
