@@ -36,6 +36,131 @@ class EmergencyService:
         payload["estimated_eta_minutes"] = None
         return payload
 
+    def get_timeline_for_emergency(self, emergency_case_id, user) -> dict:
+        from app.core.enums import UserRoleEnum
+        from app.models.dispatch import TransferDispatch
+        from app.models.emergency import EmergencyCase
+        from app.models.facility import Facility
+        from app.models.facility_user import FacilityUser
+        from app.models.redistribution import TransferRequest
+        from sqlalchemy import select
+
+        emergency = self.db.get(EmergencyCase, emergency_case_id)
+        if emergency is None:
+            raise LookupError("Emergency case not found.")
+
+        if user.role == UserRoleEnum.HOSPITAL_ADMIN:
+            membership = self.db.execute(
+                select(FacilityUser.facility_user_id).where(
+                    FacilityUser.user_id == user.user_id,
+                    FacilityUser.facility_id == emergency.facility_id,
+                    FacilityUser.assigned_role == UserRoleEnum.HOSPITAL_ADMIN,
+                )
+            ).scalar_one_or_none()
+            if membership is None:
+                raise PermissionError("Hospital administrators may only view their assigned facility timeline.")
+        elif user.role not in {UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR}:
+            raise PermissionError("This role cannot view network emergency timelines.")
+
+        events: list[dict] = []
+
+        def add_event(timestamp, event_type: str, title: str, detail: str, transfer_id=None):
+            if timestamp is None:
+                return
+            events.append({
+                "_sort": timestamp,
+                "timestamp": timestamp.isoformat(),
+                "event_type": event_type,
+                "title": title,
+                "detail": detail,
+                "transfer_id": str(transfer_id) if transfer_id else None,
+            })
+
+        add_event(
+            emergency.triggered_at,
+            "EMERGENCY_CREATED",
+            "Emergency registered",
+            f"{emergency.severity.value} shortage case created for {emergency.required_quantity} target units.",
+        )
+
+        query = (
+            select(TransferRequest, Facility.facility_name, TransferDispatch)
+            .join(Facility, TransferRequest.from_facility_id == Facility.facility_id)
+            .outerjoin(TransferDispatch, TransferRequest.transfer_id == TransferDispatch.transfer_id)
+            .where(TransferRequest.emergency_case_id == emergency_case_id)
+            .order_by(TransferRequest.requested_at.asc())
+        )
+        for transfer, donor_name, dispatch in self.db.execute(query).all():
+            transfer_id = transfer.transfer_id
+            add_event(
+                transfer.requested_at,
+                "TRANSFER_REQUESTED",
+                "Supply request created",
+                f"{transfer.requested_quantity} units requested from {donor_name}.",
+                transfer_id,
+            )
+
+            if transfer.approved_at is not None:
+                if transfer.transfer_status.value == "REJECTED":
+                    decision_detail = transfer.rejection_reason or "The destination facility rejected this transfer request."
+                    add_event(
+                        transfer.approved_at,
+                        "TRANSFER_REJECTED",
+                        "Hospital rejected transfer",
+                        decision_detail,
+                        transfer_id,
+                    )
+                else:
+                    add_event(
+                        transfer.approved_at,
+                        "TRANSFER_APPROVED",
+                        "Hospital decision recorded",
+                        f"{transfer.approved_quantity or 0} units approved.",
+                        transfer_id,
+                    )
+
+            if dispatch is not None:
+                add_event(
+                    dispatch.created_at,
+                    "DISPATCH_ASSIGNED",
+                    "Transport assigned",
+                    f"{dispatch.transport_type}"
+                    + (f" — {dispatch.vehicle_reference}" if dispatch.vehicle_reference else ""),
+                    transfer_id,
+                )
+                add_event(
+                    dispatch.dispatched_at,
+                    "SHIPMENT_DISPATCHED",
+                    "Shipment dispatched",
+                    f"Transfer entered transit using {dispatch.transport_type}.",
+                    transfer_id,
+                )
+                add_event(
+                    dispatch.delivered_at,
+                    "SHIPMENT_DELIVERED",
+                    "Delivery confirmed",
+                    f"{transfer.approved_quantity or 0} units delivered to the destination facility.",
+                    transfer_id,
+                )
+
+        if emergency.resolved_at is not None:
+            add_event(
+                emergency.resolved_at,
+                "EMERGENCY_RESOLVED",
+                "Emergency resolved",
+                "The emergency target quantity was met.",
+            )
+
+        events.sort(key=lambda event: event["_sort"])
+        for event in events:
+            event.pop("_sort", None)
+
+        return {
+            "emergency_case_id": str(emergency_case_id),
+            "timeline_scope": "timestamps currently stored on emergency, transfer and dispatch records",
+            "events": events,
+        }
+
     def get_matches_for_emergency(
         self,
         emergency_case_id,
