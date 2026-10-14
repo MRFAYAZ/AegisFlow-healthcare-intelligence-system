@@ -26,53 +26,56 @@ class EmergencyService:
         )
 
     def _enrich_emergency_response(self, emergency_row: dict) -> dict:
+        """Expose stored decision fields without manufacturing ETA or donor counts."""
         payload = dict(emergency_row)
-        transfer_status = payload.get("transfer_status")
-
-        if transfer_status is None:
-            payload["cascade_safe"] = None
-            payload["estimated_eta_minutes"] = None
-            payload["ai_reason"] = None
-            payload["alternative_donors"] = None
-            return payload
-
-        distance_km = payload.get("transfer_distance_km")
-        eta_minutes = None
-        if distance_km is not None:
-            distance_value = float(distance_km)
-            eta_minutes = max(10, int(round(distance_value * 2.2)))
-
-        ai_reason = payload.get("recommendation_reason")
-        if not ai_reason:
-            ai_reason = "Highest inventory with minimum delivery distance."
-
-        alternative_donors = payload.get("alternative_donors")
-        if alternative_donors is None:
-            alternative_donors = 4 if transfer_status in {TransferStatusEnum.PENDING, TransferStatusEnum.APPROVED, TransferStatusEnum.IN_TRANSIT} else 2
-
-        payload["cascade_safe"] = payload.get("cascade_safe")
-        payload["estimated_eta_minutes"] = eta_minutes
-        payload["ai_reason"] = ai_reason
-        payload["alternative_donors"] = alternative_donors
+        payload.setdefault("cascade_safe", None)
+        payload.setdefault("estimated_eta_minutes", None)
+        payload.setdefault("ai_reason", payload.get("recommendation_reason"))
+        payload.setdefault("alternative_donors", None)
+        # A straight-line geographic distance is not a validated road travel ETA.
+        payload["estimated_eta_minutes"] = None
         return payload
 
     def get_matches_for_emergency(
         self,
         emergency_case_id,
         max_distance_km: float | None = None,
+        user=None,
     ):
+        from app.core.enums import UserRoleEnum
         from app.models.emergency import EmergencyCase
+        from app.models.facility_user import FacilityUser
+        from sqlalchemy import select
 
         emergency = self.db.get(EmergencyCase, emergency_case_id)
         if emergency is None:
-            raise ValueError("Emergency case not found.")
-        if emergency.required_quantity is None or emergency.required_quantity <= 0:
-            raise ValueError("Emergency required quantity must be greater than zero.")
+            raise LookupError("Emergency case not found.")
+        if user is None:
+            raise PermissionError("Authentication is required to view donor matches.")
+        if user.role == UserRoleEnum.HOSPITAL_ADMIN:
+            membership = self.db.execute(
+                select(FacilityUser.facility_user_id).where(
+                    FacilityUser.user_id == user.user_id,
+                    FacilityUser.facility_id == emergency.facility_id,
+                    FacilityUser.assigned_role == UserRoleEnum.HOSPITAL_ADMIN,
+                )
+            ).scalar_one_or_none()
+            if membership is None:
+                raise PermissionError("Hospital administrators may only view matches for their assigned facility.")
+        elif user.role not in {UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR}:
+            raise PermissionError("This role cannot view network-wide donor matches.")
 
+        quantity_needed = max(
+            0,
+            int(emergency.required_quantity or 0)
+            - int(emergency.available_quantity or 0),
+        )
+        if quantity_needed <= 0:
+            return []
         return self.matching_service.find_emergency_sources(
             medicine_id=emergency.medicine_id,
             requesting_facility_id=emergency.facility_id,
-            requested_quantity=emergency.required_quantity,
+            requested_quantity=quantity_needed,
             max_distance_km=max_distance_km,
         )
 
