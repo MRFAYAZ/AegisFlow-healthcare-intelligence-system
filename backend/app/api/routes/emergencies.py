@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.api.dependencies.auth import require_roles
+from app.core.enums import UserRoleEnum
+from app.models.user import User
 from app.schemas.emergency import EmergencyResponse
 from app.schemas.match import EmergencyMatchResponse
 from app.services.emergency.emergency_service import EmergencyService
@@ -45,13 +48,23 @@ def get_emergency_matches(
     emergency_case_id: UUID,
     max_distance_km: float | None = Query(default=None, gt=0),
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles([
+            UserRoleEnum.SYSTEM_ADMIN,
+            UserRoleEnum.EMERGENCY_OPERATOR,
+            UserRoleEnum.HOSPITAL_ADMIN,
+        ])
+    ),
 ):
     try:
         return EmergencyService(db).get_matches_for_emergency(
             emergency_case_id=emergency_case_id,
             max_distance_km=max_distance_km,
+            user=current_user,
         )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
-        message = str(exc)
-        status_code = 404 if "not found" in message.lower() else 422
-        raise HTTPException(status_code=status_code, detail=message) from exc
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
