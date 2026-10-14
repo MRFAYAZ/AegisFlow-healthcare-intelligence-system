@@ -56,6 +56,26 @@ class EmergencyService:
         payload["alternative_donors"] = alternative_donors
         return payload
 
+    def get_matches_for_emergency(
+        self,
+        emergency_case_id,
+        max_distance_km: float | None = None,
+    ):
+        from app.models.emergency import EmergencyCase
+
+        emergency = self.db.get(EmergencyCase, emergency_case_id)
+        if emergency is None:
+            raise ValueError("Emergency case not found.")
+        if emergency.required_quantity is None or emergency.required_quantity <= 0:
+            raise ValueError("Emergency required quantity must be greater than zero.")
+
+        return self.matching_service.find_emergency_sources(
+            medicine_id=emergency.medicine_id,
+            requesting_facility_id=emergency.facility_id,
+            requested_quantity=emergency.required_quantity,
+            max_distance_km=max_distance_km,
+        )
+
     # =====================================================
     # CREATE EMERGENCY
     # =====================================================
