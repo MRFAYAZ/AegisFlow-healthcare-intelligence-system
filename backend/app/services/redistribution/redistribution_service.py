@@ -19,6 +19,7 @@ from app.models.transfer_batch_allocation import TransferBatchAllocation
 from app.models.redistribution import TransferRequest
 from app.services.emergency.matching_service import MatchingService
 from app.services.inventory.shortage_service import ShortageService
+from app.engines.inventory.medicine_safety import plan_fefo_reservation
 from app.services.redistribution.state_machine import validate_transfer_transition
 
 
@@ -283,17 +284,12 @@ class RedistributionService:
                     "Insufficient unexpired, batch-traceable stock for this approval."
                 )
 
-            remaining_to_reserve = approved_quantity
-            for batch in eligible_batches:
-                if remaining_to_reserve <= 0:
-                    break
-                quantity_from_batch = min(
-                    remaining_to_reserve,
-                    int(batch.quantity_available or 0),
-                )
-                if quantity_from_batch <= 0:
-                    continue
-
+            reservation_plan = plan_fefo_reservation(
+                eligible_batches,
+                approved_quantity,
+                as_of=date.today(),
+            )
+            for batch, quantity_from_batch in reservation_plan:
                 batch.quantity_available -= quantity_from_batch
                 batch.quantity_reserved += quantity_from_batch
                 self.db.add(
@@ -303,10 +299,6 @@ class RedistributionService:
                         allocated_quantity=quantity_from_batch,
                     )
                 )
-                remaining_to_reserve -= quantity_from_batch
-
-            if remaining_to_reserve:
-                raise ValueError("Unable to reserve the approved quantity from eligible medicine batches.")
 
             donor_inventory.available_stock -= approved_quantity
             donor_inventory.reserved_stock += approved_quantity
