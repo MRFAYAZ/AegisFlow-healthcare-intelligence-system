@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { useEmergencies } from "../../hooks/useEmergency"
 import { useCurrentUser } from "../../hooks/useCurrentUser"
 
@@ -53,6 +54,7 @@ function labelRole(role: string) {
 
 export function Sidebar() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { data: user } = useCurrentUser()
   const role = user?.role ?? ""
   const canViewEmergencies = ["system_admin", "emergency_operator", "hospital_admin"].includes(role)
@@ -66,6 +68,7 @@ export function Sidebar() {
 
   function logout() {
     localStorage.removeItem("aegisflow_token")
+    queryClient.clear()
     navigate("/login")
   }
 
