@@ -1,13 +1,22 @@
 import { useQuery } from "@tanstack/react-query"
 import { emergencyAPI } from "../../../services/api"
+import { Button } from "../../../components/ui/Button"
 import type { EmergencyMatch } from "../../../types/match"
 import type { Emergency } from "../../../types/emergency"
 
 interface Props {
   emergency: Emergency
+  onRequestTransfer: () => void
+  requestDisabled: boolean
+  requestLabel: string
 }
 
-export function DonorComparison({ emergency }: Props) {
+export function DonorComparison({
+  emergency,
+  onRequestTransfer,
+  requestDisabled,
+  requestLabel,
+}: Props) {
   const {
     data: donors = [],
     isLoading,
@@ -29,7 +38,7 @@ export function DonorComparison({ emergency }: Props) {
         <div>
           <h3 className="text-lg font-semibold text-slate-900">Network donor recommendations</h3>
           <p className="mt-1 text-sm text-slate-500">
-            Live backend ranking using transferable inventory, donor stock protection, and geographic distance.
+            Backend-ranked candidates across active facilities, using transferable inventory, donor stock protection and geographic distance.
           </p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
@@ -39,7 +48,7 @@ export function DonorComparison({ emergency }: Props) {
 
       <p className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800">
         Distance is a straight-line geographic estimate, not a driving route or guaranteed delivery ETA.
-        A recommendation does not authorize a transfer; hospital approval is still required.
+        Recommendations do not authorize stock movement. The destination hospital must review each generated request.
       </p>
 
       {isLoading && (
@@ -58,7 +67,7 @@ export function DonorComparison({ emergency }: Props) {
         <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-6 text-center">
           <p className="font-semibold text-slate-800">No eligible donor found</p>
           <p className="mt-1 text-sm text-slate-500">
-            No active facility with transferable stock met the current filters.
+            No active facility with safe transferable stock was found within the emergency's configured radius.
           </p>
         </div>
       )}
@@ -108,6 +117,20 @@ export function DonorComparison({ emergency }: Props) {
             </details>
           </article>
         ))}
+      </div>
+
+      <div className="mt-5 border-t border-slate-200 pt-4">
+        <Button
+          className="w-full"
+          variant="primary"
+          onClick={onRequestTransfer}
+          disabled={requestDisabled || isLoading || isError || donors.length === 0}
+        >
+          {requestLabel}
+        </Button>
+        <p className="mt-2 text-xs text-slate-500">
+          The request builder may create several donor transfer legs to cover the remaining demand. Inventory is reserved only after approval.
+        </p>
       </div>
     </section>
   )
