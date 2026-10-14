@@ -59,6 +59,8 @@ class IntegrationService:
         facility = self.db.get(Facility, payload.facility_id)
         if facility is None:
             raise LookupError("Facility not found.")
+        if not facility.is_active:
+            raise ValueError("Cannot register an integration source for an inactive facility.")
 
         existing = self.db.execute(
             select(IntegrationSource.source_id).where(
