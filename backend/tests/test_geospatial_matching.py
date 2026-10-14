@@ -2,6 +2,7 @@ import pytest
 
 from app.engines.emergency.geo import haversine_km
 from app.engines.emergency.matching_engine import MatchingEngine
+from app.engines.emergency.scoring_engine import ScoringEngine
 
 
 def test_haversine_same_point_is_zero():
@@ -24,6 +25,15 @@ def test_haversine_chennai_to_bengaluru_is_plausible():
 def test_haversine_rejects_invalid_coordinates(coordinates):
     with pytest.raises(ValueError):
         haversine_km(*coordinates)
+
+
+def test_donor_health_score_rewards_buffer_above_minimum_stock():
+    thin_buffer = ScoringEngine.calculate_donor_health_score(110, 100)
+    healthy_buffer = ScoringEngine.calculate_donor_health_score(250, 100)
+
+    assert thin_buffer == pytest.approx(0.1)
+    assert healthy_buffer == pytest.approx(1.0)
+    assert healthy_buffer > thin_buffer
 
 
 def test_matching_ranks_closer_equally_capable_source_higher_and_explains_it():
@@ -60,3 +70,8 @@ def test_matching_ranks_closer_equally_capable_source_higher_and_explains_it():
         "inventory_weight",
         "donor_health_weight",
     }
+
+
+def test_matching_rejects_non_positive_demand():
+    with pytest.raises(ValueError, match="greater than zero"):
+        MatchingEngine.generate_matches([], requested_quantity=0)
