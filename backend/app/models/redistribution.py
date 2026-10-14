@@ -119,8 +119,9 @@ class TransferRequest(Base, TimestampMixin):
         TIMESTAMP(timezone=True)
     )
 
-    completed_at: Mapped[str] = mapped_column(
-        TIMESTAMP(timezone=True)
+    completed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True
     )
 
     source_facility = relationship(
