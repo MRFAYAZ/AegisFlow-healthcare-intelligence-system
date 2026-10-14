@@ -54,6 +54,8 @@ class EmergencyResponse(BaseSchema):
 
     facility_id: UUID
     facility_name: str
+    facility_latitude: float | None = None
+    facility_longitude: float | None = None
 
     medicine_id: UUID
     medicine_name: str
@@ -81,6 +83,8 @@ class EmergencyResponse(BaseSchema):
     transfer_id: UUID | None = None
 
     donor_facility: str | None = None
+    donor_latitude: float | None = None
+    donor_longitude: float | None = None
 
     transfer_status: TransferStatusEnum | None = None
 
