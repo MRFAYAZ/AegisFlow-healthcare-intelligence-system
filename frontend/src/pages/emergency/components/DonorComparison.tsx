@@ -99,10 +99,12 @@ export function DonorComparison({
               <Metric label="Distance" value={`${donor.distance_km.toFixed(1)} km`} />
               <Metric label="Verified batches" value={String(donor.eligible_batch_count)} />
               <Metric label="Nearest expiry" value={donor.nearest_expiry_date} />
+              <Metric label="Cold-chain capability" value={donor.cold_chain_capable ? "Verified" : "Not declared"} />
             </div>
 
             <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-xs text-emerald-900">
               Expiry verified: {donor.eligible_batch_count} unexpired batch(es) available; nearest expiry {donor.nearest_expiry_date}. Allocation reserves eligible lots FEFO.
+              {donor.requires_cold_chain ? " Cold-chain capability is required and verified for this donor." : " No cold-chain requirement is recorded for this medicine."}
             </div>
 
             <details className="mt-3 rounded-lg bg-slate-50 p-3">
