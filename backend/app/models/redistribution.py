@@ -100,23 +100,28 @@ class TransferRequest(Base, TimestampMixin):
 
     cascade_safe: Mapped[bool] = mapped_column(
         Boolean,
-        default=True
+        default=True,
+        nullable=False
     )
 
-    match_score: Mapped[float] = mapped_column(
-        DECIMAL(5, 2)
+    match_score: Mapped[float | None] = mapped_column(
+        DECIMAL(5, 2),
+        nullable=True
     )
 
-    transfer_distance_km: Mapped[float] = mapped_column(
-        DECIMAL(10, 2)
+    transfer_distance_km: Mapped[float | None] = mapped_column(
+        DECIMAL(10, 2),
+        nullable=True
     )
 
-    recommendation_reason: Mapped[str] = mapped_column(
-        Text
+    recommendation_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
     )
 
-    requested_at: Mapped[str] = mapped_column(
-        TIMESTAMP(timezone=True)
+    requested_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True
     )
 
     completed_at: Mapped[datetime | None] = mapped_column(
