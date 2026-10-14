@@ -9,7 +9,8 @@ from pydantic import (
 from app.core.enums import (
     SeverityEnum,
     EmergencyStatusEnum,
-    TransferStatusEnum
+    TransferStatusEnum,
+    DispatchStatusEnum
 )
 
 from app.schemas.common import (
@@ -95,7 +96,17 @@ class EmergencyResponse(BaseSchema):
 
     ai_reason: str | None = None
 
-    alternative_donors:int | None = None
+    alternative_donors: int | None = None
+
+    requested_at: datetime | None = None
+    approved_at: datetime | None = None
+    completed_at: datetime | None = None
+    rejection_reason: str | None = None
+    dispatch_status: DispatchStatusEnum | None = None
+    transport_type: str | None = None
+    vehicle_reference: str | None = None
+    dispatched_at: datetime | None = None
+    delivered_at: datetime | None = None
 # =========================================================
 # EMERGENCY MATCH RESPONSE
 # =========================================================
