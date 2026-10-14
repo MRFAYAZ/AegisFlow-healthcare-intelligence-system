@@ -201,7 +201,11 @@ class EmergencyService:
             medicine_id=emergency.medicine_id,
             requesting_facility_id=emergency.facility_id,
             requested_quantity=quantity_needed,
-            max_distance_km=max_distance_km,
+            max_distance_km=(
+                max_distance_km
+                if max_distance_km is not None
+                else emergency.emergency_radius_km
+            ),
         )
 
     # =====================================================
