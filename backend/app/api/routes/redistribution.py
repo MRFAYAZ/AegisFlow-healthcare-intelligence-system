@@ -1,9 +1,10 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.dependencies.auth import get_current_user, require_roles
+from app.api.dependencies.auth import require_roles
 from app.core.database import get_db
 from app.core.enums import UserRoleEnum
 from app.models.user import User
@@ -17,6 +18,12 @@ from app.services.redistribution.redistribution_service import RedistributionSer
 
 router = APIRouter(prefix="/redistribution", tags=["Redistribution"])
 
+NETWORK_READ_ROLES = [
+    UserRoleEnum.SYSTEM_ADMIN,
+    UserRoleEnum.EMERGENCY_OPERATOR,
+    UserRoleEnum.HOSPITAL_ADMIN,
+]
+
 
 def _raise_service_error(exc: Exception) -> None:
     if isinstance(exc, PermissionError):
@@ -28,35 +35,55 @@ def _raise_service_error(exc: Exception) -> None:
     raise exc
 
 
-class DispatchRequestPayload:
-    """Compatibility marker for the legacy request body."""
-
-
-from pydantic import BaseModel
-
-
 class EmergencyTransferRequest(BaseModel):
     emergency_case_id: UUID
 
 
 @router.get("", response_model=list[TransferResponse])
-def get_all_transfers(db: Session = Depends(get_db)):
-    return RedistributionService(db).get_all_transfers()
+def get_all_transfers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(NETWORK_READ_ROLES)),
+):
+    try:
+        return RedistributionService(db).get_all_transfers_for_user(current_user)
+    except PermissionError as exc:
+        _raise_service_error(exc)
 
 
 @router.get("/high-priority", response_model=list[TransferResponse])
-def get_high_priority(db: Session = Depends(get_db)):
-    return RedistributionService(db).get_high_priority_transfers()
+def get_high_priority(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(NETWORK_READ_ROLES)),
+):
+    try:
+        return RedistributionService(db).get_high_priority_transfers_for_user(current_user)
+    except PermissionError as exc:
+        _raise_service_error(exc)
 
 
 @router.get("/facility/{facility_id}", response_model=list[TransferResponse])
-def get_facility_transfers(facility_id: UUID, db: Session = Depends(get_db)):
-    return RedistributionService(db).get_facility_transfers(facility_id)
+def get_facility_transfers(
+    facility_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(NETWORK_READ_ROLES)),
+):
+    try:
+        return RedistributionService(db).get_facility_transfers_for_user(
+            facility_id, current_user
+        )
+    except PermissionError as exc:
+        _raise_service_error(exc)
 
 
 @router.get("/dashboard")
-def get_dashboard(db: Session = Depends(get_db)):
-    return RedistributionService(db).get_dashboard()
+def get_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(NETWORK_READ_ROLES)),
+):
+    try:
+        return RedistributionService(db).get_dashboard_for_user(current_user)
+    except PermissionError as exc:
+        _raise_service_error(exc)
 
 
 @router.post("/request", status_code=201)
@@ -64,13 +91,11 @@ def request_transfer(
     payload: EmergencyTransferRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_roles(
-            [
-                UserRoleEnum.SYSTEM_ADMIN,
-                UserRoleEnum.HOSPITAL_ADMIN,
-                UserRoleEnum.EMERGENCY_OPERATOR,
-            ]
-        )
+        require_roles([
+            UserRoleEnum.SYSTEM_ADMIN,
+            UserRoleEnum.HOSPITAL_ADMIN,
+            UserRoleEnum.EMERGENCY_OPERATOR,
+        ])
     ),
 ):
     try:
@@ -91,17 +116,16 @@ def legacy_dispatch_request(
     payload: EmergencyTransferRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_roles(
-            [
-                UserRoleEnum.SYSTEM_ADMIN,
-                UserRoleEnum.HOSPITAL_ADMIN,
-                UserRoleEnum.EMERGENCY_OPERATOR,
-            ]
-        )
+        require_roles([
+            UserRoleEnum.SYSTEM_ADMIN,
+            UserRoleEnum.HOSPITAL_ADMIN,
+            UserRoleEnum.EMERGENCY_OPERATOR,
+        ])
     ),
 ):
-    # Preserve the existing request shape for older clients, but never claim
-    # that a shipment has been dispatched by merely generating recommendations.
+    # Older clients called this a dispatch endpoint. It only creates pending
+    # transfer requests; dispatch requires approval, transport assignment and a
+    # separate state transition endpoint below.
     return request_transfer(payload, db, current_user)
 
 
