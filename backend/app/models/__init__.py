@@ -23,3 +23,5 @@ from app.models.emergency import (
     EmergencySourceMatch
 )
 from app.models.dispatch import TransferDispatch
+
+from app.models.transfer_batch_allocation import TransferBatchAllocation
