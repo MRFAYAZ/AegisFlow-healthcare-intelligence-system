@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, ForeignKey, String, TIMESTAMP
+from sqlalchemy import Boolean, ForeignKey, String, TIMESTAMP, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,6 +12,9 @@ class IntegrationSource(Base, TimestampMixin):
     """One authenticated external-system connection restricted to one facility."""
 
     __tablename__ = "integration_sources"
+    __table_args__ = (
+        UniqueConstraint("facility_id", name="uq_integration_source_facility"),
+    )
 
     source_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
