@@ -19,6 +19,7 @@ const sectionsByRole: Record<string, Array<{ section: string; items: NavItem[] }
   system_admin: [
     { section: "Operations", items: networkItems },
     { section: "Facility operations", items: [{ to: "/shop", icon: "⊕", label: "Medical shop" }] },
+    { section: "Governance", items: [{ to: "/integrations", icon: "⇄", label: "Integrations" }] },
   ],
   emergency_operator: [
     { section: "Network operations", items: networkItems.filter((item) => item.to !== "/shop") },
