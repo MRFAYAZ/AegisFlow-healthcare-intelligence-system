@@ -34,6 +34,16 @@ export interface Emergency {
 
     resolved_at: string | null
 
+    requested_at?: string | null
+    approved_at?: string | null
+    completed_at?: string | null
+    rejection_reason?: string | null
+    dispatch_status?: string | null
+    transport_type?: string | null
+    vehicle_reference?: string | null
+    dispatched_at?: string | null
+    delivered_at?: string | null
+
     transfer_id: string | null
 
     donor_facility: string | null
