@@ -19,8 +19,6 @@ jobs:
       - name: Test geospatial ranking, safety, and integration contracts
         env:
           PYTHONPATH: backend
-          DATABASE_URL: sqlite+pysqlite:///:memory:
-          JWT_SECRET_KEY: ci-only-placeholder-secret
         run: pytest -q backend/tests/test_geospatial_matching.py backend/tests/test_transfer_state_machine.py backend/tests/test_forecast_engine.py backend/tests/test_medicine_safety.py backend/tests/test_integration_contract.py
       - name: Compile backend Python sources
         run: python -m compileall -q backend/app backend/tests
