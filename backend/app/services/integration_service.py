@@ -1,6 +1,6 @@
 """Authenticated, facility-scoped inventory snapshot ingestion."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 import secrets
@@ -10,7 +10,6 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.enums import SeverityEnum, TransferStatusEnum
-from app.engines.inventory.medicine_safety import safe_transferable_quantity
 from app.models.facility import Facility
 from app.models.integration_event import IntegrationEvent
 from app.models.integration_medicine_mapping import IntegrationMedicineMapping
@@ -265,7 +264,7 @@ class IntegrationService:
                     "Snapshot is stale: source_timestamp is older than the last accepted snapshot."
                 )
             now = self._now()
-            if payload.source_timestamp > now.replace(microsecond=0) + __import__("datetime").timedelta(minutes=5):
+            if payload.source_timestamp > now.replace(microsecond=0) + timedelta(minutes=5):
                 raise ValueError("source_timestamp is more than five minutes in the future.")
 
             external_codes = {item.external_medicine_code for item in payload.items}
@@ -428,7 +427,7 @@ class IntegrationService:
             response = {
                 "accepted": True,
                 "idempotent_replay": False,
-                "source_id": source.source_id,
+                "source_id": str(source.source_id),
                 "external_event_id": payload.external_event_id,
                 "source_timestamp": payload.source_timestamp.isoformat(),
                 "records_processed": processed,
