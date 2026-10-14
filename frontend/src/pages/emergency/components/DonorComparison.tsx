@@ -3,6 +3,7 @@ import { emergencyAPI } from "../../../services/api"
 import { Button } from "../../../components/ui/Button"
 import type { EmergencyMatch } from "../../../types/match"
 import type { Emergency } from "../../../types/emergency"
+import { useCurrentUser } from "../../../hooks/useCurrentUser"
 
 interface Props {
   emergency: Emergency
@@ -17,18 +18,19 @@ export function DonorComparison({
   requestDisabled,
   requestLabel,
 }: Props) {
+  const { data: user } = useCurrentUser()
   const {
     data: donors = [],
     isLoading,
     isError,
     error,
   } = useQuery<EmergencyMatch[]>({
-    queryKey: ["emergency-matches", emergency.emergency_case_id],
+    queryKey: ["emergency-matches", user?.id ?? "anonymous", emergency.emergency_case_id],
     queryFn: async () => {
       const response = await emergencyAPI.getMatches(emergency.emergency_case_id)
       return response.data
     },
-    enabled: Boolean(emergency.emergency_case_id),
+    enabled: Boolean(user?.id && emergency.emergency_case_id),
     staleTime: 15_000,
   })
 
