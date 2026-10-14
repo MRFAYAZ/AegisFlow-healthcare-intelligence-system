@@ -93,8 +93,13 @@ class MatchingService:
             batch_verified_quantity = sum(
                 int(lot.quantity_available or 0) for lot in eligible_lots
             )
+            aggregate_available_quantity = int(inventory.available_stock or 0)
+            verified_available_quantity = min(
+                aggregate_available_quantity,
+                batch_verified_quantity,
+            )
             transferable_quantity = safe_transferable_quantity(
-                aggregate_available_stock=int(inventory.available_stock or 0),
+                aggregate_available_stock=aggregate_available_quantity,
                 minimum_threshold=int(inventory.minimum_threshold or 0),
                 unexpired_batch_available=batch_verified_quantity,
             )
@@ -124,10 +129,11 @@ class MatchingService:
                     "facility_type": facility.facility_type.value,
                     "requires_cold_chain": bool(medicine.requires_cold_chain),
                     "cold_chain_capable": bool(facility.cold_chain_capable),
-                    "available_quantity": int(inventory.available_stock or 0),
+                    "aggregate_available_quantity": aggregate_available_quantity,
+                    "available_quantity": verified_available_quantity,
                     "transferable_quantity": transferable_quantity,
                     "suggested_quantity": min(transferable_quantity, requested_quantity),
-                    "remaining_stock": int(inventory.available_stock or 0),
+                    "remaining_stock": verified_available_quantity,
                     "minimum_threshold": int(inventory.minimum_threshold or 0),
                     "distance_km": round(distance_km, 2),
                     "batch_traceability": "VERIFIED",
