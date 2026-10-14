@@ -1,76 +1,157 @@
+import { useMemo } from "react"
+import { useNavigate } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
+import { Badge } from "../../components/ui/Badge"
+import { Button } from "../../components/ui/Button"
+import { KPICard } from "../../components/ui/KPICard"
+import { inventoryAPI } from "../../services/api"
+import type { StockoutForecast } from "../../types/forecast"
 
-import { toast } from 'sonner'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { KPICard } from '../../components/ui/KPICard'
-import type { Shortage } from '../../types'
+function riskVariant(risk: StockoutForecast["risk_level"]): "red" | "orange" | "yellow" | "green" | "blue" {
+  switch (risk) {
+    case "CRITICAL": return "red"
+    case "HIGH": return "orange"
+    case "WARNING": return "yellow"
+    case "SAFE": return "green"
+    default: return "blue"
+  }
+}
 
-const sevVariant = { emergency:'red', critical:'red', warning:'yellow' } as const
-const sevLabel = { emergency:'Emergency', critical:'Critical', warning:'Warning' } as const
+function actionLabel(action: StockoutForecast["recommended_action"]) {
+  switch (action) {
+    case "SOURCE_NETWORK": return "Source network"
+    case "REPLENISH": return "Replenish"
+    case "REVIEW_REPLENISHMENT": return "Review replenishment"
+    case "REVIEW_CONSUMPTION": return "Review consumption data"
+    default: return "Monitor"
+  }
+}
+
+function stockoutLabel(days: number | null) {
+  if (days === null) return "Insufficient consumption data"
+  if (days === 0) return "Now"
+  return `${days.toFixed(1)} days`
+}
 
 export function ShortagePage() {
-  const shortages: Shortage[] = [
-    { id: 'S1', medicine: 'Insulin', facility: 'City General', severity: 'emergency', stock: '12 units', daysLeft: 0, nearestSource: 'Apollo Hospital' },
-    { id: 'S2', medicine: 'Oxygen', facility: 'Narayana Health', severity: 'critical', stock: '84 units', daysLeft: 2, nearestSource: 'Fortis BBT' },
-    { id: 'S3', medicine: 'Amoxicillin', facility: 'Victoria Hospital', severity: 'warning', stock: '180 units', daysLeft: 6, nearestSource: 'Manipal Hospital' },
-  ]
+  const navigate = useNavigate()
+  const { data: forecasts = [], isLoading, isError, error } = useQuery<StockoutForecast[]>({
+    queryKey: ["stockout-forecasts"],
+    queryFn: async () => (await inventoryAPI.getForecast()).data as StockoutForecast[],
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+  })
 
-  function handleAction(_id: string, sev: string) {
-    if (sev === 'emergency') {
-      toast.success('Dispatching nearest donor — Emergency transfer initiated')
-    } else if (sev === 'critical') {
-      toast('Scanning donors within 5 km…', { icon:'🔍' })
-      setTimeout(() => toast.success('Match found — 2 facilities within 5 km'), 1400)
-    } else {
-      toast('Review queued', { icon:'📋' })
-    }
-  }
+  const summary = useMemo(() => ({
+    critical: forecasts.filter((item) => item.risk_level === "CRITICAL").length,
+    high: forecasts.filter((item) => item.risk_level === "HIGH").length,
+    warning: forecasts.filter((item) => item.risk_level === "WARNING").length,
+    needsData: forecasts.filter((item) => item.risk_level === "INSUFFICIENT_DATA").length,
+  }), [forecasts])
+
+  const message = error instanceof Error ? error.message : "Forecast API request failed."
 
   return (
-    <div>
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        <KPICard label="Emergency shortages" value={shortages.filter(s=>s.severity==='emergency').length} sub="Requires immediate action" trend="down" color="red" />
-        <KPICard label="Critical shortages" value={shortages.filter(s=>s.severity==='critical').length} sub="Within 3 days of zero" trend="down" color="orange" />
-        <KPICard label="Warnings" value={shortages.filter(s=>s.severity==='warning').length} sub="Monitor closely" color="orange" />
-        <KPICard label="Resolved (7d)" value="41" sub="−12% vs last week" trend="up" color="green" />
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <KPICard label="Critical stockout risk" value={summary.critical} sub="Projected at or before lead time" color="red" />
+        <KPICard label="High risk" value={summary.high} sub="Needs prompt replenishment action" color="orange" />
+        <KPICard label="Warnings" value={summary.warning} sub="Stock buffer below target" color="orange" />
+        <KPICard label="Needs consumption data" value={summary.needsData} sub="Cannot project stockout reliably" color="blue" />
       </div>
 
-      <div className="panel">
-        <div className="flex items-center justify-between mb-4">
-          <div className="panel-title">Shortage intelligence feed</div>
-          <Badge variant="red" pulse>Live</Badge>
+      <section className="panel">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="panel-title">Predictive shortage intelligence</div>
+            <p className="mt-1 max-w-3xl text-sm text-ink-muted">
+              Explainable stockout projection using recorded available stock, daily consumption, replenishment lead time and medicine safety-stock policy.
+            </p>
+          </div>
+          <Badge variant="blue">Rule-based forecast</Badge>
         </div>
-        <div className="overflow-x-auto">
-          <table className="af-table">
-            <thead>
-              <tr><th>Medicine</th><th>Facility</th><th>Severity</th><th>Stock</th><th>Days left</th><th>Nearest source</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              {shortages.map(s => (
-                <tr key={s.id}>
-                  <td><div className="font-medium">{s.medicine}</div></td>
-                  <td className="text-ink-muted">{s.facility}</td>
-                  <td><Badge variant={sevVariant[s.severity]}>{sevLabel[s.severity]}</Badge></td>
-                  <td>{s.stock}</td>
-                  <td style={{ color: s.daysLeft===0?'#dc2626':s.daysLeft<=3?'#ea580c':'#d97706', fontWeight:500 }}>
-                    {s.daysLeft===0?'Now':s.daysLeft+' days'}
-                  </td>
-                  <td className="text-ink-muted">{s.nearestSource}</td>
-                  <td>
-                    <Button
-                      variant={s.severity==='emergency'?'red':s.severity==='critical'?'orange':'ghost'}
-                      size="sm"
-                      onClick={() => handleAction(s.id, s.severity)}
-                    >
-                      {s.severity==='emergency'?'Dispatch':s.severity==='critical'?'Source':'Review'}
-                    </Button>
-                  </td>
+
+        <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
+          This is deterministic decision support, not a trained ML forecast. Reserved units are shown separately and are not counted as usable stock. Unknown consumption is reported as insufficient data rather than silently labelled safe.
+        </div>
+
+        {isLoading && (
+          <div className="rounded-lg bg-slate-50 p-6 text-sm text-slate-500">
+            Calculating stockout exposure from current inventory records…
+          </div>
+        )}
+
+        {isError && (
+          <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            Forecasts could not be loaded. {message}
+          </div>
+        )}
+
+        {!isLoading && !isError && forecasts.length === 0 && (
+          <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center">
+            <p className="font-semibold text-slate-900">No forecastable inventory records</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Add facility inventory with daily consumption and lead-time data to generate projections.
+            </p>
+          </div>
+        )}
+
+        {!isLoading && !isError && forecasts.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="af-table min-w-[1100px]">
+              <thead>
+                <tr>
+                  <th>Medicine / facility</th>
+                  <th>Available / reserved</th>
+                  <th>Daily use</th>
+                  <th>Projected stockout</th>
+                  <th>Risk</th>
+                  <th>Recommended action</th>
+                  <th>Reason</th>
+                  <th>Next step</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {forecasts.map((item) => (
+                  <tr key={item.inventory_id}>
+                    <td>
+                      <p className="font-medium text-ink">{item.medicine_name}</p>
+                      <p className="mt-1 text-xs text-ink-muted">{item.facility_name}</p>
+                    </td>
+                    <td>
+                      <p>{item.available_stock} available</p>
+                      <p className="text-xs text-ink-muted">{item.reserved_stock} reserved</p>
+                    </td>
+                    <td>
+                      {item.daily_consumption_rate > 0 ? `${item.daily_consumption_rate} units/day` : "Not recorded"}
+                    </td>
+                    <td>
+                      <p className="font-semibold">{stockoutLabel(item.projected_stockout_days)}</p>
+                      <p className="text-xs text-ink-muted">{item.lead_time_days}d lead · {item.safety_stock_days}d safety</p>
+                    </td>
+                    <td>
+                      <div className="space-y-1">
+                        <Badge variant={riskVariant(item.risk_level)}>{item.risk_level.replaceAll("_", " ")}</Badge>
+                        <p className="text-xs text-ink-muted">{item.risk_score === null ? "Score unavailable" : `Risk score ${item.risk_score.toFixed(1)} / 100`}</p>
+                      </div>
+                    </td>
+                    <td>{actionLabel(item.recommended_action)}</td>
+                    <td className="max-w-sm whitespace-normal text-xs text-ink-muted">{item.explanation}</td>
+                    <td>
+                      {item.recommended_action === "SOURCE_NETWORK"
+                        ? <Button size="sm" variant="red" onClick={() => navigate("/emergency")}>Open EOC</Button>
+                        : <Button size="sm" variant="ghost" onClick={() => navigate("/inventory")}>Review inventory</Button>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="mt-3 text-xs text-ink-muted">
+          Forecasts refresh every 15 seconds from the backend. They do not reserve inventory, create emergency cases or place purchase orders automatically.
+        </p>
+      </section>
     </div>
   )
 }
