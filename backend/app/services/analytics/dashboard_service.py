@@ -89,16 +89,15 @@ class DashboardService:
 
     def get_inventory_health_summary(self):
 
-        safe_count = {
+        safe_count = (
             self.db.execute(
                 select(func.count())
-                .where(
-                    InventoryCurrent.severity ==
-                    SeverityEnum.SAFE
-                )
+                .select_from(InventoryCurrent)
+                .where(InventoryCurrent.severity == SeverityEnum.SAFE)
             )
             .scalar()
-        }
+            or 0
+        )
 
         warning_count = (
             self.db.execute(
