@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -9,6 +9,13 @@ class IntegrationSourceCreate(BaseModel):
     source_name: str = Field(min_length=3, max_length=255)
     system_type: str = Field(min_length=2, max_length=80)
     facility_id: UUID
+
+    @field_validator("source_name", "system_type", mode="before")
+    @classmethod
+    def strip_source_text(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
+        return value.strip()
 
 
 class IntegrationSourceCreated(BaseModel):
@@ -46,9 +53,11 @@ class IntegrationMedicineMappingResponse(BaseModel):
 class IntegrationBatchSnapshot(BaseModel):
     batch_number: str = Field(min_length=1, max_length=100)
     
-    @field_validator("batch_number")
+    @field_validator("batch_number", mode="before")
     @classmethod
     def strip_batch_number(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
         return value.strip()
     manufacturing_date: date
     expiry_date: date
@@ -76,9 +85,11 @@ class IntegrationInventoryItem(BaseModel):
     lead_time_days: int = Field(ge=0)
     batches: list[IntegrationBatchSnapshot] = Field(default_factory=list)
 
-    @field_validator("external_medicine_code")
+    @field_validator("external_medicine_code", mode="before")
     @classmethod
     def strip_external_medicine_code(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
         return value.strip()
 
     @model_validator(mode="after")
@@ -101,9 +112,11 @@ class IntegrationInventorySnapshotRequest(BaseModel):
     source_timestamp: datetime
     items: list[IntegrationInventoryItem] = Field(min_length=1, max_length=500)
 
-    @field_validator("external_event_id")
+    @field_validator("external_event_id", mode="before")
     @classmethod
     def strip_external_event_id(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
         return value.strip()
 
     @field_validator("source_timestamp")
