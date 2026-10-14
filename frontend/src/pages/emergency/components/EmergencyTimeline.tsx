@@ -1,64 +1,78 @@
+import { useQuery } from "@tanstack/react-query"
 import type { Emergency } from "../../../types/emergency"
+import { auditAPI } from "../../../services/api"
 
 interface Props {
     emergency: Emergency
 }
 
+interface AuditEvent {
+    audit_id: string
+    action_type: string
+    new_value?: Record<string, unknown>
+    created_at: string
+}
+
+const eventLabels: Record<string, string> = {
+    EMERGENCY_CREATED: "Emergency detected",
+    DONOR_MATCHING_COMPLETED: "Donor matching completed",
+    ALLOCATION_APPROVED: "Allocation approved",
+    INVENTORY_RESERVED: "Inventory reserved",
+    DISPATCH_ASSIGNED: "Dispatch assigned",
+    TRANSFER_DISPATCHED: "Shipment in transit",
+    TRANSFER_DELIVERED: "Delivery confirmed",
+    INVENTORY_SETTLED: "Inventory settled",
+    EMERGENCY_PARTIALLY_RESOLVED: "Emergency partially resolved",
+    EMERGENCY_RESOLVED: "Emergency resolved",
+}
+
+function eventDetail(event: AuditEvent) {
+    const value = event.new_value ?? {}
+    if (event.action_type === "DONOR_MATCHING_COMPLETED") {
+        return `${value.candidate_count ?? 0} donor facilities evaluated`
+    }
+    if (["INVENTORY_RESERVED", "TRANSFER_DELIVERED", "INVENTORY_SETTLED"].includes(event.action_type)) {
+        return `${value.quantity ?? value.approved_quantity ?? 0} units recorded`
+    }
+    if (event.action_type === "EMERGENCY_RESOLVED" || event.action_type === "EMERGENCY_PARTIALLY_RESOLVED") {
+        return `${value.delivered_quantity ?? 0} of ${value.required_quantity ?? 0} units delivered`
+    }
+    return "Recorded by the AegisFlow operations workflow"
+}
+
 export function EmergencyTimeline({ emergency }: Props) {
-    const hasRecommendation = Boolean(
-        emergency.donor_facility ||
-        emergency.match_score !== null ||
-        emergency.transfer_distance_km !== null ||
-        emergency.approved_quantity !== null
-    )
-
-    const events = [
-        { time: "11:35", title: "Emergency Created", detail: "Critical shortage detected for ICU inventory" },
-        { time: "11:38", title: "AI Recommendation Generated", detail: hasRecommendation ? "Donor ranking finalized" : "Awaiting donor ranking" },
-        { time: "11:41", title: "Dispatch Request Sent", detail: `${emergency.donor_facility ?? "Recommended donor"} selected for hospital review` },
-        { time: "11:48", title: "Hospital Approval Pending", detail: emergency.transfer_status === "PENDING" ? "Awaiting response from hospital admin" : "Approval state updated" },
-        { time: "11:52", title: "Courier Allocation Pending", detail: emergency.transfer_status === "APPROVED" ? "Dispatcher assignment queued" : "Waiting for approval" },
-        { time: "12:05", title: "In Transit", detail: emergency.transfer_status === "IN_TRANSIT" ? "Vehicle is en route" : "Transit will start once approval is granted" },
-        { time: "12:20", title: "Delivered", detail: emergency.transfer_status === "COMPLETED" ? "Inventory received and closed" : "Delivery completion pending" },
-    ]
-
-    const currentIndex = !hasRecommendation
-        ? 1
-        : emergency.transfer_status === "PENDING"
-            ? 3
-            : emergency.transfer_status === "APPROVED"
-                ? 4
-                : emergency.transfer_status === "IN_TRANSIT"
-                    ? 5
-                    : emergency.transfer_status === "COMPLETED"
-                        ? 6
-                        : 2
+    const { data: events = [], isLoading } = useQuery<AuditEvent[]>({
+        queryKey: ["emergency-timeline", emergency.emergency_case_id],
+        queryFn: async () => (await auditAPI.getEmergencyTimeline(emergency.emergency_case_id)).data,
+        staleTime: 10000,
+    })
 
     return (
         <div className="rounded-xl border bg-white p-5">
             <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-slate-900">Operational Timeline</h3>
-                <p className="text-sm text-gray-500">Last updated {new Date(emergency.triggered_at).toLocaleString()}</p>
+                <p className="text-sm text-gray-500">Backend audit history</p>
             </div>
 
+            {isLoading && <p className="text-sm text-slate-500">Loading audit events...</p>}
+            {!isLoading && events.length === 0 && (
+                <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">
+                    No persisted audit events are available for this emergency yet.
+                </p>
+            )}
             <div className="space-y-4">
-                {events.map((event, index) => {
-                    const isComplete = index <= currentIndex
-                    return (
-                        <div key={event.title} className="flex items-start gap-3">
-                            <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-white ${isComplete ? "bg-green-600" : "bg-gray-300"}`}>
-                                {isComplete ? "✓" : index + 1}
+                {events.map((event) => (
+                    <div key={event.audit_id} className="flex items-start gap-3">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-600 text-xs font-semibold text-white">✓</div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <p className="font-medium text-slate-900">{eventLabels[event.action_type] ?? event.action_type}</p>
+                                <span className="text-sm text-slate-500">{new Date(event.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                             </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-medium text-slate-900">{event.title}</p>
-                                    <span className="text-sm text-slate-500">{event.time}</span>
-                                </div>
-                                <p className="text-sm text-slate-500">{event.detail}</p>
-                            </div>
+                            <p className="text-sm text-slate-500">{eventDetail(event)}</p>
                         </div>
-                    )
-                })}
+                    </div>
+                ))}
             </div>
         </div>
     )

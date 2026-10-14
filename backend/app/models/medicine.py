@@ -73,6 +73,11 @@ class Medicine(Base, TimestampMixin):
         Text
     )
 
+    cold_chain_required: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    storage_min_celsius: Mapped[float | None] = mapped_column(DECIMAL(5, 2))
+    storage_max_celsius: Mapped[float | None] = mapped_column(DECIMAL(5, 2))
+    transport_requirement: Mapped[str | None] = mapped_column(String(100))
+
     standard_lead_time_days: Mapped[int] = mapped_column(
         Integer,
         default=0

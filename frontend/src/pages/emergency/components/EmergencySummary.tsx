@@ -16,8 +16,8 @@ export function EmergencySummary({ emergency }: Props) {
                     : "AI Recommendation Ready"
 
     return (
-        <div className="space-y-4 rounded-xl border bg-slate-50 p-5">
-            <h3 className="text-lg font-semibold text-slate-900">Incident Overview</h3>
+        <div className="space-y-4 rounded-xl border border-border bg-surface-muted p-5">
+            <h3 className="text-lg font-semibold text-ink">Incident Overview</h3>
 
             <div className="grid grid-cols-2 gap-3">
                 <Info label="Medicine" value={emergency.medicine_name} />
@@ -34,8 +34,8 @@ export function EmergencySummary({ emergency }: Props) {
                 <Info label="Recommended Donor" value={emergency.donor_facility ?? "Awaiting rank"} />
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">
-                <span className="font-medium text-slate-900">Operational impact:</span>{" "}
+            <div className="rounded-lg border border-border bg-surface-base p-3 text-sm text-ink-muted">
+                <span className="font-medium text-ink">Operational impact:</span>{" "}
                 High urgency response required within the current service window.
             </div>
         </div>
@@ -45,7 +45,7 @@ export function EmergencySummary({ emergency }: Props) {
 function Info({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-lg border p-3">
-            <p className="text-xs text-gray-500">{label}</p>
+            <p className="text-xs text-ink-faint">{label}</p>
             <p className="font-semibold">{value}</p>
         </div>
     )

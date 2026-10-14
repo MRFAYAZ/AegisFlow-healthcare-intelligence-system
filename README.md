@@ -1,9 +1,31 @@
+1. Clone repository
 
-One more thing: after the API starts working, create a proper Alembic migration later so the schema change is tracked.
+2. Backend
 
-For now, since you're trying to get the mini-project demo working, a direct:
+cd backend
 
-ALTER TABLE facilities
-ADD COLUMN contact_phone VARCHAR(20);
+python -m venv venv
 
-is the fastest path.
+venv\Scripts\activate
+
+pip install -r requirements.txt
+
+copy .env.example .env
+
+docker compose up -d
+
+alembic upgrade head----()
+
+python seed/seed_all.py
+
+uvicorn app.main:app --reload
+
+3. Frontend
+
+cd frontend
+
+npm install
+
+copy .env.example .env
+
+npm run dev

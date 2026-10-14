@@ -4,7 +4,7 @@
 --\i /database/seeds/04_facility_users_seed.sql
 --\i /database/seeds/05_medicines_seed.sql
 --\i /database/seeds/06_inventory_seed.sql
-\i /database/seeds/07_purchase_seed.sql
+/*\i /database/seeds/07_purchase_seed.sql
 /*\i /database/seeds/08_alerts_seed.sql
 \i /database/seeds/08_transfers_seed.sql
 \i /database/seeds/09_emergency_seed.sql

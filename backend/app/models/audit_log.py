@@ -2,7 +2,8 @@ import uuid
 
 from sqlalchemy import (
     String,
-    JSON
+    JSON,
+    TIMESTAMP,
 )
 
 from sqlalchemy.dialects.postgresql import UUID
@@ -50,4 +51,9 @@ class AuditLog(Base):
 
     ip_address: Mapped[str] = mapped_column(
         String(100)
+    )
+
+    created_at: Mapped[str] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
     )

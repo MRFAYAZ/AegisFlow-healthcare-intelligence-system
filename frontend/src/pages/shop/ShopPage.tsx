@@ -1,8 +1,5 @@
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { KPICard } from '../../components/ui/KPICard'
 import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 const expiryItems = [
@@ -19,19 +16,10 @@ const topDemand = [
 ]
 
 export function ShopPage() {
-  const [entries, setEntries] = useState([
+  const entries = [
     { id:1, med:'Paracetamol 500mg', qty:100, supplier:'Apollo Pharmacy', date:'2024-01-15', status:'received' },
     { id:2, med:'Cetirizine 10mg', qty:200, supplier:'MedLine Dist.', date:'2024-01-14', status:'pending' },
-  ])
-  const [showAdd, setShowAdd] = useState(false)
-  const [newMed, setNewMed] = useState(''); const [newQty, setNewQty] = useState('50'); const [newSup, setNewSup] = useState('')
-
-  function addPurchase() {
-    if (!newMed.trim()) { toast.error('Enter medicine name'); return }
-    setEntries(prev => [{ id: Date.now(), med:newMed, qty:parseInt(newQty), supplier:newSup||'Unknown', date:new Date().toISOString().split('T')[0], status:'pending' }, ...prev])
-    toast.success(`Purchase entry added for ${newMed}`)
-    setShowAdd(false); setNewMed(''); setNewQty('50'); setNewSup('')
-  }
+  ]
 
   return (
     <div>
@@ -77,17 +65,8 @@ export function ShopPage() {
       <div className="panel">
         <div className="flex items-center justify-between mb-4">
           <div className="panel-title">Purchase entries</div>
-          <Button variant="primary" onClick={() => setShowAdd(p=>!p)}>+ Add entry</Button>
+          <span className="text-[11px] text-ink-faint">Read-only supply view</span>
         </div>
-
-        {showAdd && (
-          <div className="bg-surface-muted border border-border rounded-lg p-3 mb-4 grid grid-cols-4 gap-3 items-end">
-            <div><label className="f-label">Medicine</label><input className="f-input" value={newMed} onChange={e=>setNewMed(e.target.value)} placeholder="Medicine name"/></div>
-            <div><label className="f-label">Quantity</label><input className="f-input" type="number" value={newQty} onChange={e=>setNewQty(e.target.value)}/></div>
-            <div><label className="f-label">Supplier</label><input className="f-input" value={newSup} onChange={e=>setNewSup(e.target.value)} placeholder="Supplier name"/></div>
-            <div className="flex gap-2"><Button variant="primary" onClick={addPurchase}>Add</Button><Button variant="ghost" onClick={()=>setShowAdd(false)}>Cancel</Button></div>
-          </div>
-        )}
 
         <table className="af-table">
           <thead><tr><th>Medicine</th><th>Quantity</th><th>Supplier</th><th>Date</th><th>Status</th></tr></thead>

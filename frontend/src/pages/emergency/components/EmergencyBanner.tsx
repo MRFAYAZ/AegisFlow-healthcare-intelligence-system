@@ -1,4 +1,5 @@
 import { Badge } from "../../../components/ui/Badge"
+import { Activity, Radio } from "lucide-react"
 
 interface Props {
     activeCount: number
@@ -8,16 +9,17 @@ export function EmergencyBanner({ activeCount }: Props) {
 
     return (
 
-        <div className="rounded-xl border border-red-200 bg-red-50 px-6 py-5 flex items-center justify-between">
+        <div className="emergency-banner-panel">
 
             <div>
 
-                <h2 className="text-xl font-bold text-red-700">
-                    Emergency Operations Center
+                <div className="section-kicker danger-kicker"><Activity size={14} /> Priority response channel</div>
+                <h2 className="text-xl font-bold text-ink">
+                    Emergency response network
                 </h2>
 
-                <p className="text-sm text-red-600 mt-1">
-                    AI Redistribution Engine • Real-Time Emergency Monitoring
+                <p className="text-sm text-ink-muted mt-1">
+                    Live incident intake and explainable redistribution decisions
                 </p>
 
             </div>
@@ -25,7 +27,7 @@ export function EmergencyBanner({ activeCount }: Props) {
             <div className="flex items-center gap-3">
 
                 <Badge variant="red" pulse>
-                    LIVE
+                    <Radio size={13} /> LIVE
                 </Badge>
 
                 <div className="text-right">

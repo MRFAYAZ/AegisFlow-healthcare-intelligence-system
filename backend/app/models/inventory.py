@@ -20,6 +20,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.dialects.postgresql import UUID
 from app.models.base import Base, TimestampMixin
 from app.core.enums import SeverityEnum
+from app.core.enums import BatchStatusEnum
 
 # =========================================================
 # INVENTORY CURRENT
@@ -157,6 +158,12 @@ class InventoryBatch(Base, TimestampMixin):
     quantity_reserved: Mapped[int] = mapped_column(
         Integer,
         default=0
+    )
+
+    status: Mapped[BatchStatusEnum] = mapped_column(
+        Enum(BatchStatusEnum),
+        default=BatchStatusEnum.AVAILABLE,
+        nullable=False,
     )
 
     unit_cost: Mapped[float] = mapped_column(

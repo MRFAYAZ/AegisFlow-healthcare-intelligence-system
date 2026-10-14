@@ -1,5 +1,5 @@
 from uuid import UUID
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import (
     BaseModel,
@@ -81,6 +81,14 @@ class EmergencyResponse(BaseSchema):
 
     donor_facility: str | None = None
 
+    facility_latitude: float | None = None
+
+    facility_longitude: float | None = None
+
+    donor_latitude: float | None = None
+
+    donor_longitude: float | None = None
+
     transfer_status: TransferStatusEnum | None = None
 
     approved_quantity: int | None = None
@@ -108,14 +116,27 @@ class EmergencyMatchResponse(BaseSchema):
 
     source_facility_id: UUID
 
+    facility_name: str
+
     medicine_id: UUID
 
     available_quantity: int
 
     transferable_quantity: int
 
+    selected_batch_number: str | None = None
+    earliest_expiry_date: date | None = None
+    cold_chain_required: bool = False
+    cold_chain_capable: bool = False
+    safety_status: str = "LEGACY_UNVALIDATED"
+    safety_reason: str | None = None
+    batch_allocations: list[dict] = []
+
     distance_km: float
+    donor_shortage_score: float
 
     ranking_score: float
 
     is_selected: bool
+
+    matched_at: datetime

@@ -26,32 +26,33 @@ export function EmergencyCard({ emergency, onView }: Props) {
   const transferStatus = emergency.transfer_status ?? "PENDING"
 
   return (
-    <div className="rounded-xl border border-border bg-white shadow-sm transition-all hover:shadow-md">
-      <div className="flex items-center justify-between border-b border-border p-5">
+    <div className="emergency-incident-card">
+      <div className="incident-card-header">
         <div>
+          <div className="section-kicker">Incident {emergency.emergency_case_id.slice(0, 8)}</div>
           <div className="text-lg font-semibold text-ink">{emergency.medicine_name}</div>
           <div className="mt-1 text-sm text-ink-muted">{emergency.facility_name}</div>
         </div>
         <Badge variant={severityVariant[emergency.severity]}>{emergency.severity}</Badge>
       </div>
 
-      <div className="space-y-3 p-5">
+      <div className="incident-card-body space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-slate-50 p-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">AI Match</p>
-            <p className="mt-1 font-semibold text-slate-900">{matchScore.toFixed(0)}%</p>
+          <div className="incident-metric">
+            <p>Match score</p>
+            <p className="mt-1 font-semibold text-ink">{matchScore.toFixed(0)}%</p>
           </div>
-          <div className="rounded-lg bg-slate-50 p-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">ETA</p>
-            <p className="mt-1 font-semibold text-slate-900">{eta} min</p>
+          <div className="incident-metric">
+            <p>ETA</p>
+            <p className="mt-1 font-semibold text-ink">{eta} min</p>
           </div>
-          <div className="rounded-lg bg-slate-50 p-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Transfer</p>
-            <p className="mt-1 font-semibold text-slate-900">{transferStatus}</p>
+          <div className="incident-metric">
+            <p>Transfer</p>
+            <p className="mt-1 font-semibold text-ink">{transferStatus}</p>
           </div>
-          <div className="rounded-lg bg-slate-50 p-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Patients</p>
-            <p className="mt-1 font-semibold text-slate-900">{patients}</p>
+          <div className="incident-metric">
+            <p>Patients at risk</p>
+            <p className="mt-1 font-semibold text-ink">{patients}</p>
           </div>
         </div>
 
@@ -77,7 +78,7 @@ export function EmergencyCard({ emergency, onView }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-3 border-t border-border p-4">
+      <div className="incident-card-actions">
         <Button variant="ghost" className="flex-1" onClick={() => onView(emergency)}>
           View Details
         </Button>

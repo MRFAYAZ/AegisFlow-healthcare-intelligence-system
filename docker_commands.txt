@@ -8,3 +8,20 @@
   # to start the psql runnner in TERMINAL
   docker exec -it aegisflow_postgres psql -U aegisflow_admin -d aegisflow 
   
+  - to connect to postgreSQL
+  docker exec -it aegisflow psql -U postgres -d aegisflow
+
+  - check the data
+  SELECT current_database();
+
+  SELECT schema_name
+  FROM information_schema.schemata;
+
+  SELECT table_name
+ FROM information_schema.tables
+ WHERE table_schema='public'
+ ORDER BY table_name;
+
+- volume check in docker 
+docker volume ls
+

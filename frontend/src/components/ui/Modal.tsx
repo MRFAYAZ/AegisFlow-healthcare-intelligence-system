@@ -1,4 +1,5 @@
 import React from 'react'
+import { X } from 'lucide-react'
 interface ModalProps {
   open: boolean
   onClose: () => void
@@ -20,7 +21,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, width=
             <div className="text-[14px] font-semibold text-ink">{title}</div>
             {subtitle && <div className="text-[11px] text-ink-faint mt-0.5">{subtitle}</div>}
           </div>
-          <button onClick={onClose} className="w-6 h-6 rounded border border-border bg-surface-muted text-ink-muted hover:bg-surface-subtle flex items-center justify-center text-[13px]">✕</button>
+          <button aria-label="Close dialog" onClick={onClose} className="icon-button"><X size={14} aria-hidden="true" /></button>
         </div>
         <div className="p-5">{children}</div>
         {footer && <div className="flex gap-2 justify-end p-4 border-t border-border">{footer}</div>}

@@ -1,85 +1,19 @@
-import { useMemo, useState } from "react"
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet"
+import { useState } from "react"
+import { MapContainer, Marker, Popup, TileLayer, Polyline } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
-import type { Facility } from "../../../types"
+import type { Emergency } from "../../../types/emergency"
+// Import the new hook to fetch all facilities
 import { useFacilities } from "../../../hooks/useFacilities"
 
-function normalizeFacility(raw: unknown, fallbackIndex: number): Facility | null {
-  if (!raw || typeof raw !== "object") return null
-
-  const candidate = raw as Record<string, unknown>
-  const location = candidate.location as Record<string, unknown> | undefined
-
-  const rawLat = candidate.lat ?? candidate.latitude ?? candidate.latitude_deg ?? location?.latitude
-  const rawLng = candidate.lng ?? candidate.longitude ?? candidate.longitude_deg ?? location?.longitude
-
-  const lat = typeof rawLat === "number" ? rawLat : Number(rawLat)
-  const lng = typeof rawLng === "number" ? rawLng : Number(rawLng)
-
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
-
-  const id = String(candidate.id ?? candidate.facility_id ?? candidate.facilityId ?? `facility-${fallbackIndex}`)
-  const name = String(candidate.name ?? candidate.facility_name ?? candidate.facilityName ?? `Facility ${fallbackIndex + 1}`)
-  const type = (candidate.type ?? candidate.facility_type ?? "hospital") as Facility["type"]
-  const status = (candidate.status ?? "stocked") as Facility["status"]
-  const address = String(candidate.address ?? candidate.address_line ?? location?.address ?? "Bengaluru")
-
-  return {
-    id,
-    name,
-    type: type === "hospital" || type === "pharmacy" || type === "clinic" ? type : "hospital",
-    lat,
-    lng,
-    status: status === "stocked" || status === "low" || status === "critical" || status === "emergency" ? status : "stocked",
-    address,
+// Helper function to assign colors based on facility type
+function getFacilityColor(type: string) {
+  switch (type?.toUpperCase()) {
+    case "HOSPITAL": return "#2563eb" // Blue
+    case "PHARMACY": return "#9333ea" // Purple
+    case "SUPPLIER": return "#f97316" // Orange
+    default: return "#94a3b8"         // Slate
   }
-}
-
-const fallbackFacilities: Facility[] = [
-  {
-    id: "fac-1",
-    name: "Apollo Hospital",
-    type: "hospital",
-    lat: 12.9716,
-    lng: 77.5946,
-    status: "stocked",
-    address: "Bengaluru",
-  },
-  {
-    id: "fac-2",
-    name: "Fortis BBT",
-    type: "hospital",
-    lat: 12.9555,
-    lng: 77.6358,
-    status: "critical",
-    address: "Bengaluru",
-  },
-  {
-    id: "fac-3",
-    name: "Aster Supply Hub",
-    type: "pharmacy",
-    lat: 12.9300,
-    lng: 77.6100,
-    status: "low",
-    address: "Bengaluru",
-  },
-  {
-    id: "fac-4",
-    name: "Manipal Pharmacy",
-    type: "pharmacy",
-    lat: 12.9165,
-    lng: 77.5860,
-    status: "emergency",
-    address: "Bengaluru",
-  },
-]
-
-const statusColor: Record<Facility["status"], string> = {
-  stocked: "#16a34a",
-  low: "#d97706",
-  critical: "#ea580c",
-  emergency: "#dc2626",
 }
 
 function createMarkerIcon(color: string) {
@@ -91,52 +25,122 @@ function createMarkerIcon(color: string) {
   })
 }
 
-export function EmergencyMap() {
+interface EmergencyMapProps {
+  emergencies: Emergency[]
+}
+
+export function EmergencyMap({ emergencies }: EmergencyMapProps) {
+  const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null)
+
+  // Fetch the full healthcare network
   const { data: facilities = [] } = useFacilities()
-  const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null)
 
-  const facilityList = useMemo<Facility[]>(() => {
-    if (Array.isArray(facilities) && facilities.length > 0) {
-      const normalized = facilities
-        .map((facility, index) => normalizeFacility(facility, index))
-        .filter((item): item is Facility => Boolean(item))
+  const emergencyMarkers = emergencies
+    .filter(
+      (e) =>
+        e.facility_latitude != null &&
+        e.facility_longitude != null
+    )
+    .map((e) => ({
+      id: e.emergency_case_id,
+      hospital: e.facility_name,
+      medicine: e.medicine_name,
+      severity: e.severity,
+      lat: e.facility_latitude!,
+      lng: e.facility_longitude!,
+      donorLat: e.donor_latitude,
+      donorLng: e.donor_longitude,
+      donor: e.donor_facility,
+      status: e.transfer_status,
+    }))
 
-      if (normalized.length > 0) return normalized
-    }
-
-    return fallbackFacilities
-  }, [facilities])
-
-  const activeFacility = selectedFacility ?? facilityList[0] ?? null
+  const activeIncident = emergencyMarkers.find((e) => e.id === activeIncidentId) ?? emergencyMarkers[0] ?? null
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-border bg-surface-base p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">Live Operations Map</h3>
-          <p className="text-sm text-slate-500">Facility status and redistribution routes in real time.</p>
+          <h3 className="text-lg font-semibold text-ink">Live Healthcare Network</h3>
+          <p className="text-sm text-ink-muted">Live network tracking and AI redistribution routes.</p>
         </div>
-        <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">Live</div>
+        <div className="rounded-full bg-surface-subtle px-3 py-1 text-sm font-medium text-ink-muted">Live</div>
       </div>
 
       <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
-        <MapContainer center={[12.9716, 77.5946]} zoom={11} scrollWheelZoom className="h-[320px] w-full">
+        <MapContainer center={[13.0827, 80.2707]} zoom={11} scrollWheelZoom className="h-[320px] w-full">
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {facilityList.map((facility) => (
+
+          {/* 1. Base Layer: All Network Facilities */}
+          {facilities.map((f: any) => (
+            f.latitude && f.longitude ? (
+              <Marker
+                key={f.facility_id}
+                position={[f.latitude, f.longitude]}
+                icon={createMarkerIcon(getFacilityColor(f.facility_type))}
+              >
+                <Popup>
+                  <div>
+                    <h4 className="font-semibold text-ink">{f.facility_name}</h4>
+                    <p className="text-sm text-ink-muted">{f.facility_type}</p>
+                  </div>
+                </Popup>
+              </Marker>
+            ) : null
+          ))}
+
+          {/* 2. Delivery Routes (Polylines) */}
+          {emergencyMarkers.map((e) =>
+            e.donorLat != null && e.donorLng != null ? (
+              <Polyline
+                key={`${e.id}-route`}
+                positions={[
+                  [e.donorLat, e.donorLng],
+                  [e.lat, e.lng],
+                ]}
+                pathOptions={{
+                  color: "#2563eb",
+                  weight: 3,
+                  dashArray: e.status === "PENDING" ? "5, 10" : undefined, 
+                }}
+              />
+            ) : null
+          )}
+
+          {/* 3. Selected Donor Markers (Overlays Base Facility) */}
+          {emergencyMarkers.map((e) =>
+            e.donorLat != null && e.donorLng != null ? (
+              <Marker
+                key={`${e.id}-donor`}
+                position={[e.donorLat, e.donorLng]}
+                icon={createMarkerIcon("#16a34a")} 
+                eventHandlers={{ click: () => setActiveIncidentId(e.id) }}
+              >
+                <Popup>
+                  <div>
+                    <h4 className="font-semibold text-ink">{e.donor}</h4>
+                    <p className="text-sm text-ink-muted">Selected Donor</p>
+                  </div>
+                </Popup>
+              </Marker>
+            ) : null
+          )}
+
+          {/* 4. Emergency Incidents Markers (Overlays Base Facility) */}
+          {emergencyMarkers.map((e) => (
             <Marker
-              key={facility.id}
-              position={[facility.lat, facility.lng]}
-              icon={createMarkerIcon(statusColor[facility.status])}
-              eventHandlers={{ click: () => setSelectedFacility(facility) }}
+              key={e.id}
+              position={[e.lat, e.lng]}
+              icon={createMarkerIcon("#dc2626")} 
+              eventHandlers={{ click: () => setActiveIncidentId(e.id) }}
             >
               <Popup>
-                <div className="text-sm">
-                  <div className="font-semibold text-slate-900">{facility.name}</div>
-                  <div className="text-slate-600">{facility.address}</div>
-                  <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">{facility.status}</div>
+                <div>
+                  <h4 className="font-semibold">{e.hospital}</h4>
+                  <p>{e.medicine}</p>
+                  <p className="text-red-600 font-medium">{e.severity}</p>
                 </div>
               </Popup>
             </Marker>
@@ -144,15 +148,18 @@ export function EmergencyMap() {
         </MapContainer>
       </div>
 
-      {activeFacility && (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+      {activeIncident && (
+        <div className="mt-4 rounded-xl border border-border bg-surface-muted p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-900">{activeFacility.name}</p>
-              <p className="text-sm text-slate-500">{activeFacility.address}</p>
+              <p className="text-sm font-semibold text-ink">{activeIncident.hospital}</p>
+              <p className="text-sm text-ink-muted">
+                Needs: <span className="font-medium text-ink">{activeIncident.medicine}</span>
+                {activeIncident.donor && ` • Donor: ${activeIncident.donor}`}
+              </p>
             </div>
-            <div className="rounded-full bg-white px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-600">
-              {activeFacility.status}
+            <div className="rounded-full bg-surface-base px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-ink-muted border border-border shadow-sm">
+              {activeIncident.severity}
             </div>
           </div>
         </div>

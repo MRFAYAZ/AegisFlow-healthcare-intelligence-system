@@ -4,10 +4,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm'|'md'
   children: React.ReactNode
 }
-export function Button({ variant='primary', size='md', children, className='', ...props }: ButtonProps) {
+export function Button({ variant='primary', size='md', children, className='', type='button', ...props }: ButtonProps) {
   const sizes = { sm:'text-[11px] px-2.5 py-1', md:'text-[12px] px-3 py-1.5' }
   return (
-    <button className={`btn btn-${variant} ${sizes[size]} ${className}`} {...props}>
+    <button type={type} aria-disabled={props.disabled || undefined} className={`btn btn-${variant} ${sizes[size]} ${className}`} {...props}>
       {children}
     </button>
   )

@@ -36,7 +36,7 @@ export function EmergencyKPIs({
 
                 value={emergencies.length}
 
-                sub="Detected by AI"
+                sub="Detected by monitoring"
 
                 color="red"
 

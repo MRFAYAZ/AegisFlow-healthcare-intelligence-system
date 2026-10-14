@@ -18,7 +18,19 @@ from app.models.alert import AlertEvent
 
 from app.models.redistribution import TransferRequest
 
+from app.models.dispatch import TransferDispatch
+
 from app.models.emergency import (
     EmergencyCase,
     EmergencySourceMatch
+)
+
+from app.models.allocation import (
+    EmergencyAllocationPlan,
+    EmergencyAllocationLine,
+)
+
+from app.models.procurement import (
+    ReplenishmentRequirement,
+    SupplyRequest,
 )

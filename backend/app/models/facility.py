@@ -16,6 +16,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.models.base import Base, TimestampMixin
+from app.models.location import Location
 from app.core.enums import FacilityTypeEnum
 
 class Facility(Base, TimestampMixin):
@@ -67,6 +68,8 @@ class Facility(Base, TimestampMixin):
         Boolean,
         default=True
     )
+
+    cold_chain_capable: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     location = relationship(
         "Location",

@@ -96,3 +96,22 @@ class InventoryListResponse(BaseSchema):
     shortage_score: float
 
     severity: SeverityEnum
+
+
+class ShortageRiskAssessment(BaseSchema):
+    inventory_id: UUID
+    facility_id: UUID
+    medicine_id: UUID
+    facility_name: str
+    medicine_name: str
+    current_stock: int
+    reserved_stock: int
+    usable_stock: int
+    daily_consumption: float
+    safety_stock_days: int
+    safety_stock_units: float
+    lead_time_days: int
+    projected_stockout_days: float | None
+    risk_score: float
+    risk_level: str
+    recommended_action: str

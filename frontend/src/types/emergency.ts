@@ -15,6 +15,13 @@ export interface Emergency {
     facility_id: string
     facility_name: string
 
+    facility_latitude?: number
+
+    facility_longitude?: number
+
+    donor_latitude?: number
+
+    donor_longitude?: number
     medicine_id: string
     medicine_name: string
 
@@ -64,4 +71,12 @@ export interface Emergency {
     assigned_dispatcher?: string | null
     incident_age_minutes?: number | null
     sla_remaining_minutes?: number | null
+
+    selected_batch_number?: string | null
+    earliest_expiry_date?: string | null
+    cold_chain_required?: boolean
+    cold_chain_capable?: boolean
+    safety_status?: string
+    safety_reason?: string | null
+    batch_allocations?: Array<{ batch_number: string; quantity: number; expiry_date: string }>
 }

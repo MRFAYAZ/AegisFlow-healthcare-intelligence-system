@@ -27,6 +27,10 @@ from app.api.routes.emergencies import (
 from app.api.routes.redistribution import(
     router as redistribution_router
 )
+
+from app.api.routes.dispatch import (
+    router as dispatch_router
+)
     
 from app.api.routes.dashboard import (
     router as dashboard_router
@@ -97,6 +101,13 @@ app.include_router(
     prefix="/api/v1"
 )
 
+from app.api.routes.procurement import router as procurement_router
+
+app.include_router(
+    procurement_router,
+    prefix="/api/v1"
+)
+
 app.include_router(
     alert_router,
     prefix="/api/v1"
@@ -109,6 +120,11 @@ app.include_router(
 
 app.include_router(
     redistribution_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    dispatch_router,
     prefix="/api/v1"
 )
 

@@ -20,11 +20,22 @@ from app.schemas.inventory import (
 from app.schemas.inventory import (
     InventoryListResponse
 )
+from app.schemas.inventory import ShortageRiskAssessment
 
 router = APIRouter(
     prefix="/inventory",
     tags=["Inventory"]
 )
+
+
+@router.get(
+    "/shortage-predictions",
+    response_model=list[ShortageRiskAssessment],
+)
+def get_shortage_predictions(
+    db: Session = Depends(get_db),
+):
+    return InventoryService(db).get_shortage_risk_assessments()
 
 
 # =====================================================

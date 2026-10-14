@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 
 from app.models.facility import Facility
@@ -30,7 +30,6 @@ class FacilityRepository(BaseRepository):
 
         return facility
 
-
     # =====================================================
     # GET BY LICENSE
     # =====================================================
@@ -43,9 +42,7 @@ class FacilityRepository(BaseRepository):
         query = (
             select(Facility)
             .where(
-                Facility.license_number
-                ==
-                license_number
+                Facility.license_number == license_number
             )
         )
 
@@ -53,7 +50,6 @@ class FacilityRepository(BaseRepository):
             self.db.execute(query)
             .scalar_one_or_none()
         )
-
 
     # =====================================================
     # GET BY EMAIL
@@ -67,9 +63,7 @@ class FacilityRepository(BaseRepository):
         query = (
             select(Facility)
             .where(
-                Facility.contact_email
-                ==
-                email
+                Facility.contact_email == email
             )
         )
 
@@ -82,16 +76,25 @@ class FacilityRepository(BaseRepository):
     # GET FACILITY BY ID
     # =====================================================
 
-    def get_by_id(self, facility_id):
+    def get_by_id(
+        self,
+        facility_id
+    ):
 
         query = (
             select(Facility)
+            .options(
+                joinedload(Facility.location)
+            )
             .where(
                 Facility.facility_id == facility_id
             )
         )
 
-        return self.db.execute(query).scalar_one_or_none()
+        return (
+            self.db.execute(query)
+            .scalar_one_or_none()
+        )
 
     # =====================================================
     # GET ALL FACILITIES
@@ -99,6 +102,15 @@ class FacilityRepository(BaseRepository):
 
     def get_all_facilities(self):
 
-        query = select(Facility)
+        query = (
+            select(Facility)
+            .options(
+                joinedload(Facility.location)
+            )
+        )
 
-        return self.db.execute(query).scalars().all()
+        return (
+            self.db.execute(query)
+            .scalars()
+            .all()
+        )

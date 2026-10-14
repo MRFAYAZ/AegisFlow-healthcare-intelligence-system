@@ -22,6 +22,8 @@ from app.models.base import Base, TimestampMixin
 
 from app.core.enums import TransferStatusEnum
 
+from datetime import datetime
+
 
 # =========================================================
 # TRANSFER REQUEST
@@ -51,9 +53,68 @@ class TransferRequest(Base, TimestampMixin):
         nullable=False
     )
 
-    emergency_case_id: Mapped[uuid.UUID | None]  = mapped_column(
+    emergency_case_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("emergency_cases.emergency_case_id"),
+        nullable=True
+    )
+
+    requested_quantity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    approved_quantity: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    transfer_status: Mapped[TransferStatusEnum] = mapped_column(
+        Enum(TransferStatusEnum),
+        default=TransferStatusEnum.PENDING,
+        nullable=False
+    )
+
+    cascade_safe: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False
+    )
+
+    match_score: Mapped[float | None] = mapped_column(
+        DECIMAL(5, 2)
+    )
+
+    transfer_distance_km: Mapped[float | None] = mapped_column(
+        DECIMAL(10, 2)
+    )
+
+    recommendation_reason: Mapped[str | None] = mapped_column(
+        Text
+    )
+
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True
+    )
+
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True
+    )
+
+    approved_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True
+    )
+
+    requested_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False
+    )
+
+    completed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
         nullable=True
     )
 
@@ -62,43 +123,11 @@ class TransferRequest(Base, TimestampMixin):
         back_populates="transfer_requests"
     )
 
-    requested_quantity: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False
-    )
-
-    approved_quantity: Mapped[int] = mapped_column(
-        Integer
-    )
-
-    transfer_status: Mapped[TransferStatusEnum] = mapped_column(
-        Enum(TransferStatusEnum),
-        default=TransferStatusEnum.PENDING
-    )
-
-    cascade_safe: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True
-    )
-
-    match_score: Mapped[float] = mapped_column(
-        DECIMAL(5, 2)
-    )
-
-    transfer_distance_km: Mapped[float] = mapped_column(
-        DECIMAL(10, 2)
-    )
-
-    recommendation_reason: Mapped[str] = mapped_column(
-        Text
-    )
-
-    requested_at: Mapped[str] = mapped_column(
-        TIMESTAMP(timezone=True)
-    )
-
-    completed_at: Mapped[str] = mapped_column(
-        TIMESTAMP(timezone=True)
+    dispatch = relationship(
+        "TransferDispatch",
+        back_populates="transfer",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
     source_facility = relationship(

@@ -5,6 +5,18 @@ import { toast } from 'sonner'
 import { authAPI } from '../../services/api'
 import { useAppStore } from '../../store/useAppStore'
 
+function decodeJwtRole(token: string): string | null {
+  try {
+    const payload = token.split('.')[1]
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const decoded = JSON.parse(atob(padded))
+    return typeof decoded?.role === 'string' ? decoded.role.toLowerCase() : null
+  } catch {
+    return null
+  }
+}
+
 const DEMO_USERS = [
   {
     name: 'System Admin',
@@ -46,11 +58,24 @@ export function LoginPage() {
         token
       )
 
+      let userRole = decodeJwtRole(token)
+
+      try {
+        const meResponse = await authAPI.me()
+        const backendRole = meResponse?.data?.role
+        if (backendRole) {
+          userRole = String(backendRole).toLowerCase()
+        }
+      } catch (profileError) {
+        console.warn('Could not load current user profile, using token role fallback.', profileError)
+      }
+
       setUser({
         id: 'authenticated-user',
         name: email,
         email,
-        role: 'system_admin'
+        role: userRole ?? 'hospital_admin',
+        facility: 'AegisFlow HQ'
       })
 
       toast.success(

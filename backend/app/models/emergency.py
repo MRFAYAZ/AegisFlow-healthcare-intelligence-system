@@ -6,8 +6,13 @@ from sqlalchemy import (
     ForeignKey,
     Enum,
     TIMESTAMP,
-    Boolean
+    Boolean,
+    String,
+    Date,
+    Text,
+    JSON,
 )
+
 
 from sqlalchemy.orm import (
     Mapped,
@@ -17,7 +22,10 @@ from sqlalchemy.orm import (
 
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.models.base import Base, TimestampMixin
+from app.models.base import (
+    Base,
+    TimestampMixin
+)
 
 from app.core.enums import (
     SeverityEnum,
@@ -30,6 +38,7 @@ from app.core.enums import (
 # =========================================================
 
 class EmergencyCase(Base, TimestampMixin):
+
     __tablename__ = "emergency_cases"
 
     emergency_case_id: Mapped[uuid.UUID] = mapped_column(
@@ -42,6 +51,7 @@ class EmergencyCase(Base, TimestampMixin):
         "TransferRequest",
         back_populates="emergency_case"
     )
+
     facility_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("facilities.facility_id"),
         nullable=False
@@ -89,9 +99,23 @@ class EmergencyCase(Base, TimestampMixin):
         TIMESTAMP(timezone=True)
     )
 
-    facility = relationship("Facility")
+    allocation_plan = relationship(
+        "EmergencyAllocationPlan",
+        back_populates="emergency_case",
+        uselist=False
+    )
 
-    medicine = relationship("Medicine")
+    # =====================================================
+    # RELATIONSHIPS
+    # =====================================================
+
+    facility = relationship(
+        "Facility"
+    )
+
+    medicine = relationship(
+        "Medicine"
+    )
 
 
 # =========================================================
@@ -99,6 +123,7 @@ class EmergencyCase(Base, TimestampMixin):
 # =========================================================
 
 class EmergencySourceMatch(Base, TimestampMixin):
+
     __tablename__ = "emergency_source_matches"
 
     match_id: Mapped[uuid.UUID] = mapped_column(
@@ -122,6 +147,10 @@ class EmergencySourceMatch(Base, TimestampMixin):
         nullable=False
     )
 
+    # =====================================================
+    # INVENTORY
+    # =====================================================
+
     available_quantity: Mapped[int] = mapped_column(
         Integer
     )
@@ -130,13 +159,57 @@ class EmergencySourceMatch(Base, TimestampMixin):
         Integer
     )
 
+    selected_batch_number: Mapped[str | None] = mapped_column(String(100))
+    earliest_expiry_date: Mapped[str | None] = mapped_column(Date)
+    cold_chain_required: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    cold_chain_capable: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    safety_status: Mapped[str] = mapped_column(String(40), default="LEGACY_UNVALIDATED", nullable=False)
+    safety_reason: Mapped[str | None] = mapped_column(Text)
+    batch_allocations: Mapped[list | None] = mapped_column(JSON)
+
+    # =====================================================
+    # DISTANCE
+    # =====================================================
+
     distance_km: Mapped[float] = mapped_column(
         DECIMAL(10, 2)
     )
 
+    distance_score: Mapped[float] = mapped_column(
+        DECIMAL(5, 4)
+    )
+
+    # =====================================================
+    # DONOR HEALTH
+    # =====================================================
+
+    donor_shortage_score: Mapped[float] = mapped_column(
+        DECIMAL(5, 2)
+    )
+
+    donor_health_score: Mapped[float] = mapped_column(
+        DECIMAL(5, 4)
+    )
+
+    # =====================================================
+    # INVENTORY MATCH SCORE
+    # =====================================================
+
+    inventory_score: Mapped[float] = mapped_column(
+        DECIMAL(5, 4)
+    )
+
+    # =====================================================
+    # FINAL RANKING
+    # =====================================================
+
     ranking_score: Mapped[float] = mapped_column(
         DECIMAL(5, 2)
     )
+
+    # =====================================================
+    # SELECTION
+    # =====================================================
 
     is_selected: Mapped[bool] = mapped_column(
         Boolean,
@@ -147,8 +220,18 @@ class EmergencySourceMatch(Base, TimestampMixin):
         TIMESTAMP(timezone=True)
     )
 
-    emergency_case = relationship("EmergencyCase")
+    # =====================================================
+    # RELATIONSHIPS
+    # =====================================================
 
-    source_facility = relationship("Facility")
+    emergency_case = relationship(
+        "EmergencyCase"
+    )
 
-    medicine = relationship("Medicine")
+    source_facility = relationship(
+        "Facility"
+    )
+
+    medicine = relationship(
+        "Medicine"
+    )

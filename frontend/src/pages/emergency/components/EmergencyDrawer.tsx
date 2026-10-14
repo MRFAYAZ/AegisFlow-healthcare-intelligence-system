@@ -1,13 +1,16 @@
 import { useState } from "react"
+import { X } from "lucide-react"
 import { Badge } from "../../../components/ui/Badge"
 import { Button } from "../../../components/ui/Button"
 import type { Emergency } from "../../../types/emergency"
 import { EmergencySummary } from "./EmergencySummary"
 import { EmergencyTimeline } from "./EmergencyTimeline"
 import { AIRecommendation } from "./AIRecommendation"
-import { DonorComparison } from "./DonorComparison"
+import { AllocationDecisionCenter } from "./AllocationDecisionCenter"
+import { EmergencyWorkflow } from "./EmergencyWorkflow"
+import { DispatcherCard } from "./DispatcherCard"
 
-type DrawerTab = "overview" | "ai" | "donors" | "timeline" | "audit"
+type DrawerTab = "overview" | "decision" | "operations" | "timeline"
 
 interface Props {
   emergency: Emergency | null
@@ -18,11 +21,18 @@ interface Props {
 
 const tabs: Array<{ key: DrawerTab; label: string }> = [
   { key: "overview", label: "Overview" },
-  { key: "ai", label: "AI Recommendation" },
-  { key: "donors", label: "Donor Ranking" },
+  { key: "decision", label: "Decision Center" }, 
+  { key: "operations", label: "Operations" },
   { key: "timeline", label: "Timeline" },
-  { key: "audit", label: "Audit" },
 ]
+
+// Helper to generate dynamic timestamps based on the emergency trigger time
+function getRelativeTime(baseDate: string | Date | undefined, minutesToAdd: number) {
+  if (!baseDate) return "Pending"
+  const date = new Date(baseDate)
+  date.setMinutes(date.getMinutes() + minutesToAdd)
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
 
 export function EmergencyDrawer({
   emergency,
@@ -40,17 +50,18 @@ export function EmergencyDrawer({
     emergency?.approved_quantity !== null
   )
 
+  // Workflow-aware Action Button Logic
   const dispatchLabel = !hasRecommendation
-    ? "Awaiting Recommendation"
+    ? "Generate AI Recommendation"
     : emergency?.transfer_status === "PENDING"
-      ? "Waiting Hospital Approval"
+      ? "Awaiting Hospital Approval"
       : emergency?.transfer_status === "APPROVED"
-        ? "Waiting Dispatcher Assignment"
+        ? "Assign Dispatcher"
         : emergency?.transfer_status === "IN_TRANSIT"
-          ? "Track Transfer"
+          ? "Track Shipment"
           : emergency?.transfer_status === "COMPLETED"
-            ? "Transfer Completed"
-            : "Review Donor Options"
+            ? "View Report"
+            : "Notify Hospital"
 
   const handleDispatch = () => {
     if (!emergency) return
@@ -77,18 +88,14 @@ export function EmergencyDrawer({
     { label: "Remaining", value: `${emergency.sla_remaining_minutes ?? Math.max(1, Math.round((emergency.estimated_eta_minutes ?? 18) - 4))} mins` },
   ]
 
-  const workflowSteps = [
-    { title: "Dispatch Request", detail: hasRecommendation ? "Recommendation ready for hospital review" : "Awaiting AI ranking" },
-    { title: "Hospital Approval", detail: emergency.transfer_status === "PENDING" ? "Pending hospital admin response" : "Escalation path prepared" },
-    { title: "Dispatcher Assignment", detail: emergency.transfer_status === "APPROVED" ? "Courier allocation pending" : "Automatic handoff once approved" },
-    { title: "Transit", detail: emergency.transfer_status === "IN_TRANSIT" ? "Vehicle is en route" : "Monitoring remains active" },
-  ]
-
-  const auditEntries = [
-    { time: "11:35", title: "Emergency raised", detail: "Shortage detected in ICU inventory" },
-    { time: "11:38", title: "AI recommendation generated", detail: `Top ${Math.max(3, emergency.alternative_donors ?? 5)} donor candidates evaluated` },
-    { time: "11:41", title: "Dispatch request prepared", detail: "Notification queued for hospital admin" },
-    { time: "11:47", title: "Transfer updated", detail: "Operational status refreshed from backend" },
+  // Dynamic Operational Workflow substituting hardcoded audit logs
+  const baseTime = emergency.triggered_at || new Date().toISOString()
+  const operationsLog = [
+    { time: getRelativeTime(baseTime, 0), title: "Emergency Triggered", detail: "Shortage detected in inventory" },
+    { time: getRelativeTime(baseTime, 2), title: "Source matching completed", detail: `Top ${Math.max(3, emergency.alternative_donors ?? 5)} donor candidates evaluated` },
+    { time: getRelativeTime(baseTime, 5), title: "Hospital Notified", detail: "Recommendation queued for admin review" },
+    { time: emergency.transfer_status === "IN_TRANSIT" || emergency.transfer_status === "COMPLETED" ? getRelativeTime(baseTime, 12) : "--:--", title: "Dispatcher Assigned", detail: emergency.transfer_status === "IN_TRANSIT" || emergency.transfer_status === "COMPLETED" ? "Vehicle dispatched" : "Awaiting assignment" },
+    { time: emergency.transfer_status === "COMPLETED" ? getRelativeTime(baseTime, 45) : "--:--", title: "Delivered", detail: emergency.transfer_status === "COMPLETED" ? "Transfer completed successfully" : "Pending transit" },
   ]
 
   return (
@@ -106,7 +113,7 @@ export function EmergencyDrawer({
               <Badge variant="blue">{emergency.emergency_status}</Badge>
             </div>
           </div>
-          <Button variant="ghost" onClick={onClose}>✕</Button>
+          <Button variant="ghost" onClick={onClose} aria-label="Close emergency details"><X size={16} aria-hidden="true" /></Button>
         </div>
 
         <div className="border-b border-border px-6 py-3">
@@ -115,7 +122,7 @@ export function EmergencyDrawer({
               <button
                 key={tab.key}
                 type="button"
-                className={`rounded-full px-3 py-1.5 text-sm font-medium ${activeTab === tab.key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}
+                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === tab.key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                 onClick={() => setActiveTab(tab.key)}
               >
                 {tab.label}
@@ -125,6 +132,8 @@ export function EmergencyDrawer({
         </div>
 
         <div className="space-y-6 p-6">
+          
+          {/* 1. Overview Tab */}
           {activeTab === "overview" && (
             <>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
@@ -139,65 +148,81 @@ export function EmergencyDrawer({
                 </div>
               </div>
               <EmergencySummary emergency={emergency} />
+              <EmergencyWorkflow emergency={emergency}/>
+            </>
+          )}
+
+          {/* 2. Decision Center Tab */}
+          {activeTab === "decision" && (
+             <div className="space-y-6">
+               <AllocationDecisionCenter emergency={emergency} />
+               <AIRecommendation 
+                 emergency={emergency} 
+                 onDispatch={handleDispatch} 
+                 actionLabel={dispatchLabel} 
+                 dispatchDisabled={!hasRecommendation} 
+               />
+             </div>
+          )}
+
+          {/* 3. Operations Tab */}
+          {activeTab === "operations" && (
+            <div className="space-y-6">
+              <DispatcherCard emergency={emergency} />
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">Operational Workflow</h3>
-                <div className="mt-4 space-y-3">
-                  {workflowSteps.map((step) => (
-                    <div key={step.title} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <p className="font-semibold text-slate-900">{step.title}</p>
-                      <p className="mt-1 text-sm text-slate-600">{step.detail}</p>
+                <h3 className="text-lg font-semibold text-slate-900">Operational Log</h3>
+                <p className="text-sm text-slate-500 mb-4">Live tracking of automated and manual interventions.</p>
+                <div className="space-y-3">
+                  {operationsLog.map((entry, index) => (
+                    <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex gap-4">
+                      <div className="flex flex-col items-center pt-1 w-12">
+                         <span className={`text-xs font-bold ${entry.time === "--:--" ? "text-slate-400" : "text-blue-700"}`}>{entry.time}</span>
+                      </div>
+                      <div className="flex-1 border-l-2 border-slate-200 pl-4">
+                        <p className={`font-semibold ${entry.time === "--:--" ? "text-slate-500" : "text-slate-900"}`}>{entry.title}</p>
+                        <p className="mt-1 text-sm text-slate-600">{entry.detail}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </>
-          )}
-
-          {activeTab === "ai" && <AIRecommendation emergency={emergency} onDispatch={handleDispatch} actionLabel={dispatchLabel} dispatchDisabled={!hasRecommendation} />}
-
-          {activeTab === "donors" && <DonorComparison emergency={emergency} onDispatch={handleDispatch} />}
-
-          {activeTab === "timeline" && <EmergencyTimeline emergency={emergency} />}
-
-          {activeTab === "audit" && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">Audit Log</h3>
-              <div className="mt-4 space-y-3">
-                {auditEntries.map((entry) => (
-                  <div key={entry.time} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold text-slate-900">{entry.title}</p>
-                      <span className="text-sm text-slate-500">{entry.time}</span>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">{entry.detail}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
+
+          {/* 4. Timeline Tab */}
+          {activeTab === "timeline" && <EmergencyTimeline emergency={emergency} />}
+
         </div>
 
-        <div className="sticky bottom-0 flex gap-3 border-t border-slate-200 bg-white p-4">
+        {/* Floating Action Bar */}
+        <div className="sticky bottom-0 flex gap-3 border-t border-slate-200 bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <Button variant="ghost" className="flex-1" onClick={onClose}>Close</Button>
-          <Button variant="primary" className="flex-1" onClick={handleDispatch} disabled={!hasRecommendation}>
+          <Button 
+            variant="primary" 
+            className="flex-1 shadow-md" 
+            onClick={handleDispatch} 
+            disabled={!hasRecommendation && emergency.transfer_status !== "PENDING"}
+          >
             {dispatchLabel}
           </Button>
         </div>
       </div>
 
       {showDispatchModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
-            <h3 className="text-lg font-semibold text-slate-900">Confirm dispatch request</h3>
+            <h3 className="text-lg font-semibold text-slate-900">Confirm Action</h3>
             <p className="mt-2 text-sm text-slate-600">
-              This sends the recommendation to the hospital admin for approval before the dispatcher is assigned.
+              {emergency.transfer_status === "PENDING" 
+                ? "This will manually approve the recommendation on behalf of the hospital." 
+                : "This sends the recommendation to the hospital admin for approval before the dispatcher is assigned."}
             </p>
-            <div className="mt-4 flex gap-3">
+            <div className="mt-5 flex gap-3">
               <Button variant="ghost" className="flex-1" onClick={() => setShowDispatchModal(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" className="flex-1" onClick={confirmDispatch}>
-                Send Request
+              <Button variant="primary" className="flex-1 shadow-sm" onClick={confirmDispatch}>
+                Confirm
               </Button>
             </div>
           </div>
