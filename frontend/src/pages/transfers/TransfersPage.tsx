@@ -6,6 +6,7 @@ import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
 import { Modal } from "../../components/ui/Modal"
 import type { TransferRecord, TransferStatus } from "../../types/transfer-record"
+import { useCurrentUser } from "../../hooks/useCurrentUser"
 
 function getErrorMessage(error: unknown): string {
   if (typeof error === "object" && error !== null && "response" in error) {
@@ -34,6 +35,11 @@ function time(value?: string | null) {
 
 export function TransfersPage() {
   const queryClient = useQueryClient()
+  const { data: user } = useCurrentUser()
+  const isNetworkOperations = user?.role === "system_admin" || user?.role === "emergency_operator"
+  const canApproveTransfer = (transfer: TransferRecord) =>
+    user?.role === "system_admin"
+    || (user?.role === "hospital_admin" && Boolean(user.facilityIds?.includes(transfer.to_facility_id)))
   const { data: transfers = [], isLoading, isError, error } = useQuery<TransferRecord[]>({
     queryKey: ["transfers", "backend"],
     queryFn: async () => (await transferAPI.getAll()).data as TransferRecord[],
@@ -249,23 +255,29 @@ export function TransfersPage() {
                     </td>
                     <td>
                       <div className="flex flex-wrap gap-1.5">
-                        {record.transfer_status === "PENDING" && (
+                        {record.transfer_status === "PENDING" && canApproveTransfer(record) && (
                           <>
                             <Button size="sm" variant="green" onClick={() => { setApprovalQuantity(String(record.requested_quantity)); setApproveTarget(record) }} disabled={isSaving}>Review</Button>
                             <Button size="sm" variant="red" onClick={() => { setRejectTarget(record); setRejectionReason("") }} disabled={isSaving}>Reject</Button>
                           </>
                         )}
-                        {record.transfer_status === "APPROVED" && !record.dispatch_status && (
+                        {record.transfer_status === "PENDING" && !canApproveTransfer(record) && (
+                          <span className="text-xs text-ink-muted">Destination hospital decision required</span>
+                        )}
+                        {record.transfer_status === "APPROVED" && !record.dispatch_status && isNetworkOperations && (
                           <Button size="sm" variant="primary" onClick={() => { setAssignTarget(record); setTransportType("Hospital vehicle") }} disabled={isSaving}>Assign transport</Button>
                         )}
-                        {record.transfer_status === "APPROVED" && record.dispatch_status === "ASSIGNED" && (
+                        {record.transfer_status === "APPROVED" && record.dispatch_status === "ASSIGNED" && isNetworkOperations && (
                           <Button size="sm" variant="primary" onClick={() => void dispatch(record)} disabled={isSaving}>Dispatch</Button>
                         )}
-                        {record.transfer_status === "IN_TRANSIT" && (
+                        {record.transfer_status === "IN_TRANSIT" && isNetworkOperations && (
                           <Button size="sm" variant="green" onClick={() => void deliver(record)} disabled={isSaving}>Confirm delivery</Button>
                         )}
                         {["COMPLETED", "REJECTED", "CANCELLED"].includes(record.transfer_status) && (
                           <span className="text-xs text-ink-muted">No action</span>
+                        )}
+                        {["APPROVED", "IN_TRANSIT"].includes(record.transfer_status) && !isNetworkOperations && (
+                          <span className="text-xs text-ink-muted">Operations role required</span>
                         )}
                       </div>
                     </td>
