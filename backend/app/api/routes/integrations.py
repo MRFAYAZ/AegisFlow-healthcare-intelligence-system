@@ -8,6 +8,7 @@ from app.core.database import get_db
 from app.core.enums import UserRoleEnum
 from app.models.user import User
 from app.schemas.integration import (
+    IntegrationEventResponse,
     IntegrationInventorySnapshotRequest,
     IntegrationMedicineMappingCreate,
     IntegrationMedicineMappingResponse,
@@ -44,6 +45,22 @@ def list_integration_sources(
     current_user: User = Depends(require_roles([UserRoleEnum.SYSTEM_ADMIN])),
 ):
     return IntegrationService(db).list_sources()
+
+
+@router.get(
+    "/sources/{source_id}/events",
+    response_model=list[IntegrationEventResponse],
+    summary="List the last 100 successfully accepted snapshot receipts",
+)
+def list_snapshot_events(
+    source_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRoleEnum.SYSTEM_ADMIN])),
+):
+    try:
+        return IntegrationService(db).list_snapshot_events(source_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/sources/{source_id}/disable", response_model=IntegrationSourceResponse)
