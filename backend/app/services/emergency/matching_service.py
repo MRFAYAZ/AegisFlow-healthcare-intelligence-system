@@ -1,15 +1,17 @@
+from datetime import date
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.engines.emergency.geo import haversine_km
 from app.engines.emergency.matching_engine import MatchingEngine
 from app.models.facility import Facility
-from app.models.inventory import InventoryCurrent
+from app.models.inventory import InventoryBatch, InventoryCurrent
 from app.models.location import Location
 
 
 class MatchingService:
-    """Discover safe candidate inventories and rank them by explainable factors."""
+    """Discover eligible, expiry-verified inventory and rank it explainably."""
 
     def __init__(self, db: Session):
         self.db = db
@@ -42,17 +44,49 @@ class MatchingService:
                 InventoryCurrent.facility_id != requesting_facility_id,
             )
         )
-
         rows = self.db.execute(query).all()
+        if not rows:
+            return []
+
+        inventory_ids = [inventory.inventory_id for inventory, _, _ in rows]
+        lots = self.db.execute(
+            select(InventoryBatch)
+            .where(InventoryBatch.inventory_id.in_(inventory_ids))
+            .order_by(InventoryBatch.expiry_date.asc(), InventoryBatch.batch_id.asc())
+        ).scalars().all()
+
+        lots_by_inventory: dict[object, list[InventoryBatch]] = {}
+        for lot in lots:
+            lots_by_inventory.setdefault(lot.inventory_id, []).append(lot)
+
+        today = date.today()
         candidates: list[dict] = []
 
         for inventory, facility, location in rows:
-            # available_stock represents unreserved stock in the current schema.
-            # Protect the donor's minimum threshold before ranking it.
-            transferable_quantity = max(
+            # Batch traceability is a hard eligibility requirement in this
+            # medicine-safety upgrade. An aggregate total alone cannot prove
+            # that the stock is in date, so untracked stock is not offered.
+            inventory_lots = lots_by_inventory.get(inventory.inventory_id, [])
+            eligible_lots = [
+                lot for lot in inventory_lots
+                if lot.expiry_date is not None
+                and lot.expiry_date >= today
+                and int(lot.quantity_available or 0) > 0
+            ]
+            if not eligible_lots:
+                continue
+
+            stock_above_threshold = max(
                 0,
                 int(inventory.available_stock or 0)
                 - int(inventory.minimum_threshold or 0),
+            )
+            batch_verified_quantity = sum(
+                int(lot.quantity_available or 0) for lot in eligible_lots
+            )
+            transferable_quantity = min(
+                stock_above_threshold,
+                batch_verified_quantity,
             )
             if transferable_quantity <= 0:
                 continue
@@ -71,12 +105,15 @@ class MatchingService:
                     "facility_id": str(facility.facility_id),
                     "facility_name": facility.facility_name,
                     "facility_type": facility.facility_type.value,
-                    "available_quantity": transferable_quantity,
+                    "available_quantity": int(inventory.available_stock or 0),
                     "transferable_quantity": transferable_quantity,
                     "suggested_quantity": min(transferable_quantity, requested_quantity),
                     "remaining_stock": int(inventory.available_stock or 0),
                     "minimum_threshold": int(inventory.minimum_threshold or 0),
                     "distance_km": round(distance_km, 2),
+                    "batch_traceability": "VERIFIED",
+                    "eligible_batch_count": len(eligible_lots),
+                    "nearest_expiry_date": min(lot.expiry_date for lot in eligible_lots).isoformat(),
                 }
             )
 
