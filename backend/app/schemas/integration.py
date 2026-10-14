@@ -94,6 +94,8 @@ class IntegrationInventoryItem(BaseModel):
 
     @model_validator(mode="after")
     def validate_snapshot_batches(self):
+        if self.total_stock > 0 and not self.batches:
+            raise ValueError("Non-zero inventory snapshots require batch-level expiry data.")
         codes = [batch.batch_number for batch in self.batches]
         if len(codes) != len(set(codes)):
             raise ValueError("batch_number values must be unique within a medicine snapshot.")
@@ -102,8 +104,6 @@ class IntegrationInventoryItem(BaseModel):
             raise ValueError(
                 "total_stock must equal the sum of source-reported available and reserved stock across batches."
             )
-        if self.total_stock > 0 and not self.batches:
-            raise ValueError("Non-zero inventory snapshots require batch-level expiry data.")
         return self
 
 
