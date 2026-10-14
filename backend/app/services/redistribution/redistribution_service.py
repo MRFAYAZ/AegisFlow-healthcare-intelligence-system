@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -14,7 +14,8 @@ from app.core.enums import (
 from app.models.dispatch import TransferDispatch
 from app.models.emergency import EmergencyCase
 from app.models.facility_user import FacilityUser
-from app.models.inventory import InventoryCurrent
+from app.models.inventory import InventoryBatch, InventoryCurrent
+from app.models.transfer_batch_allocation import TransferBatchAllocation
 from app.models.redistribution import TransferRequest
 from app.services.emergency.matching_service import MatchingService
 from app.services.inventory.shortage_service import ShortageService
@@ -261,6 +262,52 @@ class RedistributionService:
                     f"Insufficient safe transferable stock. Current safe quantity: {safe_transferable}."
                 )
 
+            # Reserve concrete, unexpired lots in FEFO order. Aggregate
+            # stock without lot-level traceability is not eligible for a new
+            # emergency transfer.
+            eligible_batches = self.db.execute(
+                select(InventoryBatch)
+                .where(
+                    InventoryBatch.inventory_id == donor_inventory.inventory_id,
+                    InventoryBatch.expiry_date >= date.today(),
+                    InventoryBatch.quantity_available > 0,
+                )
+                .order_by(InventoryBatch.expiry_date.asc(), InventoryBatch.batch_id.asc())
+                .with_for_update()
+            ).scalars().all()
+            safe_batch_quantity = sum(
+                int(batch.quantity_available or 0) for batch in eligible_batches
+            )
+            if not eligible_batches or approved_quantity > safe_batch_quantity:
+                raise ValueError(
+                    "Insufficient unexpired, batch-traceable stock for this approval."
+                )
+
+            remaining_to_reserve = approved_quantity
+            for batch in eligible_batches:
+                if remaining_to_reserve <= 0:
+                    break
+                quantity_from_batch = min(
+                    remaining_to_reserve,
+                    int(batch.quantity_available or 0),
+                )
+                if quantity_from_batch <= 0:
+                    continue
+
+                batch.quantity_available -= quantity_from_batch
+                batch.quantity_reserved += quantity_from_batch
+                self.db.add(
+                    TransferBatchAllocation(
+                        transfer_id=transfer.transfer_id,
+                        batch_id=batch.batch_id,
+                        allocated_quantity=quantity_from_batch,
+                    )
+                )
+                remaining_to_reserve -= quantity_from_batch
+
+            if remaining_to_reserve:
+                raise ValueError("Unable to reserve the approved quantity from eligible medicine batches.")
+
             donor_inventory.available_stock -= approved_quantity
             donor_inventory.reserved_stock += approved_quantity
             self._recalculate_inventory(donor_inventory)
@@ -454,11 +501,64 @@ class RedistributionService:
                 raise ValueError("Donor reserved/total stock is inconsistent; delivery settlement was cancelled.")
 
             now = self._now()
+            batch_allocations = self.db.execute(
+                select(TransferBatchAllocation, InventoryBatch)
+                .join(
+                    InventoryBatch,
+                    TransferBatchAllocation.batch_id == InventoryBatch.batch_id,
+                )
+                .where(TransferBatchAllocation.transfer_id == transfer_id)
+                .order_by(InventoryBatch.expiry_date.asc(), InventoryBatch.batch_id.asc())
+                .with_for_update()
+            ).all()
+
+            allocated_batch_quantity = sum(
+                int(allocation.allocated_quantity) for allocation, _ in batch_allocations
+            )
+            if batch_allocations and allocated_batch_quantity != quantity:
+                raise ValueError(
+                    "Batch allocation total does not match the approved transfer quantity."
+                )
+
+            if not batch_allocations:
+                tracked_batch_count = self.db.execute(
+                    select(func.count(InventoryBatch.batch_id)).where(
+                        InventoryBatch.inventory_id == donor.inventory_id
+                    )
+                ).scalar_one()
+                if tracked_batch_count:
+                    raise ValueError(
+                        "Tracked donor stock has no transfer batch allocation; settlement was cancelled."
+                    )
+
             donor.reserved_stock -= quantity
             donor.total_stock -= quantity
             destination.available_stock += quantity
             destination.total_stock += quantity
             destination.last_restocked_at = now
+
+            # Preserve lot identity and expiry metadata at the receiving facility.
+            for allocation, source_batch in batch_allocations:
+                lot_quantity = int(allocation.allocated_quantity)
+                if int(source_batch.quantity_reserved or 0) < lot_quantity:
+                    raise ValueError(
+                        f"Reserved quantity is inconsistent for batch {source_batch.batch_number}."
+                    )
+                source_batch.quantity_reserved -= lot_quantity
+                self.db.add(
+                    InventoryBatch(
+                        inventory_id=destination.inventory_id,
+                        batch_number=source_batch.batch_number,
+                        supplier_name=source_batch.supplier_name,
+                        manufacturing_date=source_batch.manufacturing_date,
+                        expiry_date=source_batch.expiry_date,
+                        quantity_received=lot_quantity,
+                        quantity_available=lot_quantity,
+                        quantity_reserved=0,
+                        unit_cost=source_batch.unit_cost,
+                    )
+                )
+
             self._recalculate_inventory(donor)
             self._recalculate_inventory(destination)
 
