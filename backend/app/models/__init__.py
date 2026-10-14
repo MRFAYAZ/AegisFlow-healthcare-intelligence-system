@@ -27,3 +27,7 @@ from app.models.dispatch import TransferDispatch
 from app.models.transfer_batch_allocation import TransferBatchAllocation
 
 from app.models.emergency_timeline_event import EmergencyTimelineEvent
+
+from app.models.integration_source import IntegrationSource
+from app.models.integration_medicine_mapping import IntegrationMedicineMapping
+from app.models.integration_event import IntegrationEvent
