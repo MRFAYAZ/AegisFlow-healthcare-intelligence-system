@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { emergencyAPI } from "../../../services/api"
 import type { Emergency } from "../../../types/emergency"
+import { useCurrentUser } from "../../../hooks/useCurrentUser"
 
 interface TimelineEvent {
   timestamp: string
@@ -21,13 +22,14 @@ interface Props {
 }
 
 export function EmergencyTimeline({ emergency }: Props) {
+  const { data: user } = useCurrentUser()
   const { data, isLoading, isError, error } = useQuery<TimelineResponse>({
-    queryKey: ["emergency-timeline", emergency.emergency_case_id],
+    queryKey: ["emergency-timeline", user?.id ?? "anonymous", emergency.emergency_case_id],
     queryFn: async () => {
       const response = await emergencyAPI.getTimeline(emergency.emergency_case_id)
       return response.data
     },
-    enabled: Boolean(emergency.emergency_case_id),
+    enabled: Boolean(user?.id && emergency.emergency_case_id),
     refetchInterval: 10_000,
   })
 
