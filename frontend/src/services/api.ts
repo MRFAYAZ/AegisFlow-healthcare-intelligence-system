@@ -116,6 +116,8 @@ export const integrationAPI = {
     api.post(`/integrations/sources/${sourceId}/rotate-key`),
   getMappings: (sourceId: string) =>
     api.get(`/integrations/sources/${sourceId}/medicine-mappings`),
+  getEvents: (sourceId: string) =>
+    api.get(`/integrations/sources/${sourceId}/events`),
   upsertMapping: (sourceId: string, data: { external_medicine_code: string; medicine_id: string }) =>
     api.post(`/integrations/sources/${sourceId}/medicine-mappings`, data),
 }
