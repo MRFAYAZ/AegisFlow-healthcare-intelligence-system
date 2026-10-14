@@ -18,6 +18,8 @@ export interface EmergencyMatch {
   distance_km: number
   ranking_score: number
   score_breakdown: MatchScoreBreakdown
+  requires_cold_chain: boolean
+  cold_chain_capable: boolean
   batch_traceability: string
   eligible_batch_count: number
   nearest_expiry_date: string
