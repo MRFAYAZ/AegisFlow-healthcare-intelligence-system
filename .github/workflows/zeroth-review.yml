@@ -18,7 +18,7 @@ jobs:
       - name: Test geospatial ranking and explanation
         env:
           PYTHONPATH: backend
-        run: pytest -q backend/tests/test_geospatial_matching.py
+        run: pytest -q backend/tests/test_geospatial_matching.py backend/tests/test_transfer_state_machine.py
       - name: Compile backend Python sources
         run: python -m compileall -q backend/app backend/tests
 
