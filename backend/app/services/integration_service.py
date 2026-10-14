@@ -259,9 +259,9 @@ class IntegrationService:
                 response["message"] = "Identical snapshot replay accepted; no inventory changes were applied."
                 return response
 
-            if source.last_snapshot_at is not None and payload.source_timestamp < source.last_snapshot_at:
+            if source.last_snapshot_at is not None and payload.source_timestamp <= source.last_snapshot_at:
                 raise ValueError(
-                    "Snapshot is stale: source_timestamp is older than the last accepted snapshot."
+                    "Snapshot is stale: source_timestamp must be newer than the last accepted snapshot."
                 )
             now = self._now()
             if payload.source_timestamp > now.replace(microsecond=0) + timedelta(minutes=5):
