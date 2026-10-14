@@ -102,6 +102,13 @@ class EmergencyRepository(BaseRepository):
                 TransferRequest.from_facility_id ==
                 DonorFacility.facility_id
             )
+            # Emergency cards show one latest transfer summary per emergency.
+            # The transfer-list API remains the source for viewing every leg.
+            .distinct(EmergencyCase.emergency_case_id)
+            .order_by(
+                EmergencyCase.emergency_case_id,
+                TransferRequest.requested_at.desc().nullslast(),
+            )
         )
     # =====================================================
     # GET ACTIVE EMERGENCIES
