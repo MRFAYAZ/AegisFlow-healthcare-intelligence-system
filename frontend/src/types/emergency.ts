@@ -14,6 +14,8 @@ export interface Emergency {
 
     facility_id: string
     facility_name: string
+    facility_latitude?: number | null
+    facility_longitude?: number | null
 
     medicine_id: string
     medicine_name: string
@@ -47,6 +49,8 @@ export interface Emergency {
     transfer_id: string | null
 
     donor_facility: string | null
+    donor_latitude?: number | null
+    donor_longitude?: number | null
 
     transfer_status: string | null
 
