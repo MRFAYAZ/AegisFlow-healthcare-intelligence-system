@@ -34,6 +34,7 @@ export const authAPI = {
 // Inventory
 export const inventoryAPI = {
   getAll: () => api.get('/inventory'),
+  getForecast: () => api.get('/inventory/forecast'),
   create: (data: unknown) => api.post('/inventory', data),
   update: (id: string, data: unknown) => api.put(`/inventory/${id}`, data),
   delete: (id: string) => api.delete(`/inventory/${id}`),
