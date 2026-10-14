@@ -57,6 +57,9 @@ export function Sidebar() {
   const role = user?.role ?? ""
   const canViewEmergencies = ["system_admin", "emergency_operator", "hospital_admin"].includes(role)
   const { data: emergencies = [] } = useEmergencies(canViewEmergencies)
+  const activeEmergencyCount = emergencies.filter(
+    (emergency) => emergency.emergency_status !== "RESOLVED" && emergency.emergency_status !== "CLOSED"
+  ).length
   const sections = sectionsByRole[role] ?? [
     { section: "Workspace", items: [{ to: "/dashboard", icon: "⊞", label: "Dashboard" }] },
   ]
@@ -83,7 +86,7 @@ export function Sidebar() {
           <div key={section.section} className="px-2 mb-1">
             <div className="text-[10px] text-ink-faint uppercase tracking-[0.5px] px-2 py-2">{section.section}</div>
             {section.items.map((item) => {
-              const badgeCount = item.to === "/emergency" ? emergencies.length : undefined
+              const badgeCount = item.to === "/emergency" ? activeEmergencyCount : undefined
               return (
                 <NavLink
                   key={item.to}
