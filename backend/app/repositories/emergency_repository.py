@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.models.facility import Facility
 from app.models.medicine import Medicine
 from app.models.redistribution import TransferRequest
+from app.models.dispatch import TransferDispatch
 
 from app.models.emergency import (
     EmergencyCase,
@@ -72,6 +73,15 @@ class EmergencyRepository(BaseRepository):
                 TransferRequest.cascade_safe,
 
                 TransferRequest.recommendation_reason,
+                TransferRequest.requested_at,
+                TransferRequest.approved_at,
+                TransferRequest.completed_at,
+                TransferRequest.rejection_reason,
+                TransferDispatch.status.label("dispatch_status"),
+                TransferDispatch.transport_type,
+                TransferDispatch.vehicle_reference,
+                TransferDispatch.dispatched_at,
+                TransferDispatch.delivered_at,
 
                 DonorFacility.facility_name.label(
                     "donor_facility"
@@ -97,6 +107,10 @@ class EmergencyRepository(BaseRepository):
                 TransferRequest.emergency_case_id
             )
 
+            .outerjoin(
+                TransferDispatch,
+                TransferRequest.transfer_id == TransferDispatch.transfer_id
+            )
             .outerjoin(
                 DonorFacility,
                 TransferRequest.from_facility_id ==
