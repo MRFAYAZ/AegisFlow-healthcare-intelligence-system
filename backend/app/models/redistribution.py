@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     Enum,
     Text,
+    String,
     TIMESTAMP
 )
 
@@ -67,8 +68,29 @@ class TransferRequest(Base, TimestampMixin):
         nullable=False
     )
 
-    approved_quantity: Mapped[int] = mapped_column(
-        Integer
+    approved_quantity: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True
+    )
+
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True
+    )
+
+    approved_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True
+    )
+
+    rejection_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
     )
 
     transfer_status: Mapped[TransferStatusEnum] = mapped_column(
@@ -112,3 +134,9 @@ class TransferRequest(Base, TimestampMixin):
     )
 
     medicine = relationship("Medicine")
+
+    dispatch = relationship(
+        "TransferDispatch",
+        back_populates="transfer",
+        uselist=False
+    )
