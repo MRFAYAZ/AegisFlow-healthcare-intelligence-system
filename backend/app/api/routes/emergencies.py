@@ -1,88 +1,57 @@
-from fastapi import (
-    APIRouter,
-    Depends
-)
+from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.schemas.emergency import EmergencyResponse
+from app.schemas.match import EmergencyMatchResponse
+from app.services.emergency.emergency_service import EmergencyService
 
-from app.services.emergency.emergency_service import (
-    EmergencyService
-)
-
-from app.schemas.emergency import (
-    EmergencyResponse
-)
-
-router = APIRouter(
-    prefix="/emergencies",
-    tags=["Emergencies"]
-)
+router = APIRouter(prefix="/emergencies", tags=["Emergencies"])
 
 
-# =====================================================
-# GET ALL EMERGENCIES
-# =====================================================
+@router.get("", response_model=list[EmergencyResponse])
+def get_all_emergencies(db: Session = Depends(get_db)):
+    return EmergencyService(db).get_all_emergencies()
+
+
+@router.get("/active", response_model=list[EmergencyResponse])
+def get_active_emergencies(db: Session = Depends(get_db)):
+    return EmergencyService(db).get_active_emergencies()
+
+
+@router.get("/critical", response_model=list[EmergencyResponse])
+def get_critical_emergencies(db: Session = Depends(get_db)):
+    return EmergencyService(db).get_critical_emergencies()
+
+
+@router.get("/dashboard")
+def get_dashboard(db: Session = Depends(get_db)):
+    return EmergencyService(db).get_dashboard()
+
 
 @router.get(
-    "",
-    response_model=list[EmergencyResponse]
+    "/{emergency_case_id}/matches",
+    response_model=list[EmergencyMatchResponse],
+    summary="Rank eligible donor facilities for an emergency",
+    description=(
+        "Returns safe transferable quantities, straight-line geographic distance, "
+        "weighted match scores and an explanation for each recommendation. Distance "
+        "is not a road route or guaranteed travel-time estimate."
+    ),
 )
-def get_all_emergencies(
-    db: Session = Depends(get_db)
+def get_emergency_matches(
+    emergency_case_id: UUID,
+    max_distance_km: float | None = Query(default=None, gt=0),
+    db: Session = Depends(get_db),
 ):
-
-    service = EmergencyService(db)
-
-    return service.get_all_emergencies()
-
-
-# =====================================================
-# GET ACTIVE EMERGENCIES
-# =====================================================
-
-@router.get(
-    "/active",
-    response_model=list[EmergencyResponse]
-)
-def get_active_emergencies(
-    db: Session = Depends(get_db)
-):
-
-    service = EmergencyService(db)
-
-    return service.get_active_emergencies()
-
-
-# =====================================================
-# GET CRITICAL EMERGENCIES
-# =====================================================
-
-@router.get(
-    "/critical",
-    response_model=list[EmergencyResponse]
-)
-def get_critical_emergencies(
-    db: Session = Depends(get_db)
-):
-
-    service = EmergencyService(db)
-
-    return service.get_critical_emergencies()
-
-
-# =====================================================
-# DASHBOARD
-# =====================================================
-
-@router.get(
-    "/dashboard"
-)
-def get_dashboard(
-    db: Session = Depends(get_db)
-):
-
-    service = EmergencyService(db)
-
-    return service.get_dashboard()
+    try:
+        return EmergencyService(db).get_matches_for_emergency(
+            emergency_case_id=emergency_case_id,
+            max_distance_km=max_distance_km,
+        )
+    except ValueError as exc:
+        message = str(exc)
+        status_code = 404 if "not found" in message.lower() else 422
+        raise HTTPException(status_code=status_code, detail=message) from exc
