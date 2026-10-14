@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/Button"
 import { KPICard } from "../../components/ui/KPICard"
 import { inventoryAPI } from "../../services/api"
 import type { StockoutForecast } from "../../types/forecast"
+import { useCurrentUser } from "../../hooks/useCurrentUser"
 
 function riskVariant(risk: StockoutForecast["risk_level"]): "red" | "orange" | "yellow" | "green" | "blue" {
   switch (risk) {
@@ -35,9 +36,11 @@ function stockoutLabel(days: number | null) {
 
 export function ShortagePage() {
   const navigate = useNavigate()
+  const { data: user } = useCurrentUser()
   const { data: forecasts = [], isLoading, isError, error } = useQuery<StockoutForecast[]>({
-    queryKey: ["stockout-forecasts"],
+    queryKey: ["stockout-forecasts", user?.id ?? "anonymous"],
     queryFn: async () => (await inventoryAPI.getForecast()).data as StockoutForecast[],
+    enabled: Boolean(user?.id),
     refetchInterval: 15_000,
     refetchOnWindowFocus: true,
   })
