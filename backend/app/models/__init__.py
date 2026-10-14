@@ -22,3 +22,4 @@ from app.models.emergency import (
     EmergencyCase,
     EmergencySourceMatch
 )
+from app.models.dispatch import TransferDispatch
