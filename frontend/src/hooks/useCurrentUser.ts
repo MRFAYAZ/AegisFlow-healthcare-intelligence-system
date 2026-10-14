@@ -7,6 +7,7 @@ interface BackendCurrentUser {
   full_name: string
   email: string
   role: string
+  facility_ids: string[]
 }
 
 function normalizeRole(role: string): string {
@@ -30,6 +31,7 @@ export function useCurrentUser() {
         name: user.full_name,
         email: user.email,
         role: normalizeRole(user.role),
+        facilityIds: user.facility_ids ?? [],
       }
     },
   })
