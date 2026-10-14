@@ -45,6 +45,10 @@ export const emergencyAPI = {
   getActive: () => api.get('/emergencies/active'),
   getCritical: () => api.get('/emergencies/critical'),
   getDashboard: () => api.get('/emergencies/dashboard'),
+  getMatches: (emergencyCaseId: string, maxDistanceKm?: number) =>
+    api.get(`/emergencies/${emergencyCaseId}/matches`, {
+      params: maxDistanceKm ? { max_distance_km: maxDistanceKm } : undefined,
+    }),
 }
 
 // Transfers
