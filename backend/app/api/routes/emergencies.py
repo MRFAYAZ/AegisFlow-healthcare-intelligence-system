@@ -35,6 +35,32 @@ def get_dashboard(db: Session = Depends(get_db)):
 
 
 @router.get(
+    "/{emergency_case_id}/timeline",
+    summary="Return persisted emergency, transfer and dispatch milestones",
+)
+def get_emergency_timeline(
+    emergency_case_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles([
+            UserRoleEnum.SYSTEM_ADMIN,
+            UserRoleEnum.EMERGENCY_OPERATOR,
+            UserRoleEnum.HOSPITAL_ADMIN,
+        ])
+    ),
+):
+    try:
+        return EmergencyService(db).get_timeline_for_emergency(
+            emergency_case_id=emergency_case_id,
+            user=current_user,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get(
     "/{emergency_case_id}/matches",
     response_model=list[EmergencyMatchResponse],
     summary="Rank eligible donor facilities for an emergency",
