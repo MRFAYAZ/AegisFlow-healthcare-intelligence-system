@@ -67,8 +67,8 @@ class IntegrationService:
         ).scalar_one_or_none()
         if existing is not None:
             raise ValueError(
-                "An authoritative integration source already exists for this facility. "
-                "Disable or reconfigure it before creating another source."
+                "An integration source already exists for this facility. Reuse it or rotate its key; "
+                "AegisFlow enforces one authoritative source per facility."
             )
 
         credential = secrets.token_urlsafe(36)
@@ -114,6 +114,34 @@ class IntegrationService:
         self.db.commit()
         self.db.refresh(source)
         return self._source_response(source)
+
+
+    def rotate_source_key(self, source_id: UUID) -> dict:
+        """Reissue a one-time key, invalidating the previous credential atomically."""
+        try:
+            source = self.db.execute(
+                select(IntegrationSource)
+                .where(IntegrationSource.source_id == source_id)
+                .with_for_update()
+            ).scalar_one_or_none()
+            if source is None:
+                raise LookupError("Integration source not found.")
+
+            credential = secrets.token_urlsafe(36)
+            source.credential_hash = self._credential_hash(credential)
+            source.is_active = True
+            self.db.commit()
+            self.db.refresh(source)
+            return {
+                **self._source_response(source),
+                "integration_key": credential,
+                "credential_note": (
+                    "Copy this key now. It is shown only once; the previous key was invalidated."
+                ),
+            }
+        except Exception:
+            self.db.rollback()
+            raise
 
     def create_or_update_medicine_mapping(
         self,
