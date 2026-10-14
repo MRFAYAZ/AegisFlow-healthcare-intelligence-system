@@ -46,8 +46,14 @@ export function EmergencyPage() {
 
     const advanceEmergencyWorkflow = async (emergencyId: string) => {
         try {
-            await redistributionAPI.dispatch(emergencyId)
-            await queryClient.invalidateQueries({ queryKey: ["emergencies"] })
+            const response = await redistributionAPI.requestTransfer(emergencyId)
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["emergencies"] }),
+                queryClient.invalidateQueries({ queryKey: ["redistribution"] }),
+            ])
+            window.alert(
+                `${response.data.message}\nRecommended quantity: ${response.data.recommended_quantity} units\nDonor facilities: ${response.data.donor_count}\nStill unsourced: ${response.data.unfilled_quantity} units`
+            )
         } catch {
             // Surface the error in the UI rather than silently pretending dispatch succeeded.
             window.alert("The transfer request could not be submitted. Check the current transfer state and try again.")
