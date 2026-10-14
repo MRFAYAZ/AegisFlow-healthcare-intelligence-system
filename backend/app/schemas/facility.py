@@ -115,8 +115,8 @@ class FacilityNetworkResponse(BaseSchema):
     location_id: UUID
     is_active: bool
     cold_chain_capable: bool = False
-    latitude: float
-    longitude: float
-    city: str
-    state: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
     address_line: Optional[str] = None
