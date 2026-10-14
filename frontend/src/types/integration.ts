@@ -34,3 +34,15 @@ export interface IntegrationMedicine {
   medicine_name: string
   generic_name?: string
 }
+
+
+export interface IntegrationSnapshotEvent {
+  integration_event_id: string
+  source_id: string
+  external_event_id: string
+  source_timestamp: string
+  status: string
+  records_processed: number
+  received_at: string
+  processed_at: string
+}
