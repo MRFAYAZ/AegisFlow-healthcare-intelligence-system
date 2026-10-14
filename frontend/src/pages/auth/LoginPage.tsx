@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { authAPI } from '../../services/api'
@@ -21,6 +22,7 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   const { setUser } = useAppStore()
+  const queryClient = useQueryClient()
 
   const navigate = useNavigate()
 
@@ -52,13 +54,21 @@ export function LoginPage() {
         ? "supplier"
         : String(currentUser.role).toLowerCase()
 
-      setUser({
+      const normalizedUser = {
         id: String(currentUser.user_id),
         name: String(currentUser.full_name),
         email: String(currentUser.email),
         role: normalizedRole,
         facilityIds: currentUser.facility_ids ?? [],
-      })
+      }
+      setUser(normalizedUser)
+      queryClient.setQueryData(["current-user"], normalizedUser)
+      // Prevent data rendered for a previous session from appearing after account switching.
+      queryClient.removeQueries({ queryKey: ["emergencies"] })
+      queryClient.removeQueries({ queryKey: ["transfers"] })
+      queryClient.removeQueries({ queryKey: ["stockout-forecasts"] })
+      queryClient.removeQueries({ queryKey: ["emergency-matches"] })
+      queryClient.removeQueries({ queryKey: ["emergency-timeline"] })
 
       toast.success(
         'Login successful'
