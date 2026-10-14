@@ -22,7 +22,10 @@ from app.models.emergency_timeline_event import EmergencyTimelineEvent
 from app.models.redistribution import TransferRequest
 from app.services.emergency.matching_service import MatchingService
 from app.services.inventory.shortage_service import ShortageService
-from app.engines.inventory.medicine_safety import plan_fefo_reservation
+from app.engines.inventory.medicine_safety import (
+    plan_fefo_reservation,
+    safe_transferable_quantity,
+)
 from app.services.redistribution.state_machine import validate_transfer_transition
 
 
@@ -314,19 +317,9 @@ class RedistributionService:
                     raise ValueError(
                         "Cold-chain medicine requires declared cold-chain capability at both facilities."
                     )
-            safe_transferable = max(
-                0,
-                int(donor_inventory.available_stock)
-                - int(donor_inventory.minimum_threshold or 0),
-            )
-            if approved_quantity > safe_transferable:
-                raise ValueError(
-                    f"Insufficient safe transferable stock. Current safe quantity: {safe_transferable}."
-                )
-
-            # Reserve concrete, unexpired lots in FEFO order. Aggregate
-            # stock without lot-level traceability is not eligible for a new
-            # emergency transfer.
+            # Reserve concrete, unexpired lots in FEFO order. The safety
+            # threshold is protected using verified usable lots, not aggregate
+            # stock that may include expired or untraceable quantities.
             eligible_batches = self.db.execute(
                 select(InventoryBatch)
                 .where(
@@ -337,12 +330,22 @@ class RedistributionService:
                 .order_by(InventoryBatch.expiry_date.asc(), InventoryBatch.batch_id.asc())
                 .with_for_update()
             ).scalars().all()
+            if not eligible_batches:
+                raise ValueError(
+                    "No unexpired, batch-traceable stock is available for this approval."
+                )
             safe_batch_quantity = sum(
                 int(batch.quantity_available or 0) for batch in eligible_batches
             )
-            if not eligible_batches or approved_quantity > safe_batch_quantity:
+            safe_transferable = safe_transferable_quantity(
+                aggregate_available_stock=int(donor_inventory.available_stock or 0),
+                minimum_threshold=int(donor_inventory.minimum_threshold or 0),
+                unexpired_batch_available=safe_batch_quantity,
+            )
+            if approved_quantity > safe_transferable:
                 raise ValueError(
-                    "Insufficient unexpired, batch-traceable stock for this approval."
+                    f"Insufficient safe transferable stock after expiry verification. "
+                    f"Current safe quantity: {safe_transferable}."
                 )
 
             reservation_plan = plan_fefo_reservation(
