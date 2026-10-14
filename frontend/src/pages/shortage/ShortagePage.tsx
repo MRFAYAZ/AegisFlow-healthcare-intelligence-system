@@ -105,7 +105,8 @@ export function ShortagePage() {
               <thead>
                 <tr>
                   <th>Medicine / facility</th>
-                  <th>Available / reserved</th>
+                  <th>Available / verified</th>
+                  <th>Batch / expiry</th>
                   <th>Daily use</th>
                   <th>Projected stockout</th>
                   <th>Risk</th>
@@ -122,8 +123,18 @@ export function ShortagePage() {
                       <p className="mt-1 text-xs text-ink-muted">{item.facility_name}</p>
                     </td>
                     <td>
-                      <p>{item.available_stock} available</p>
+                      <p>{item.available_stock} aggregate available</p>
                       <p className="text-xs text-ink-muted">{item.reserved_stock} reserved</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-700">{item.batch_verified_usable_stock} batch-verified usable</p>
+                    </td>
+                    <td>
+                      <div className="space-y-1">
+                        <Badge variant={item.batch_traceability === "VERIFIED" ? "green" : "red"}>
+                          {item.batch_traceability.replaceAll("_", " ")}
+                        </Badge>
+                        <p className="text-xs text-ink-muted">{item.eligible_batch_count} eligible lots</p>
+                        <p className="text-xs text-ink-muted">{item.expired_batch_quantity} expired units</p>
+                      </div>
                     </td>
                     <td>
                       {item.daily_consumption_rate > 0 ? `${item.daily_consumption_rate} units/day` : "Not recorded"}
