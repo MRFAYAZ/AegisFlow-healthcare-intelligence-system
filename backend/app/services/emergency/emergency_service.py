@@ -101,8 +101,11 @@ class EmergencyService:
                 requesting_facility_id=
                 emergency.facility_id,
 
-                requested_quantity=
-                emergency.required_quantity
+                requested_quantity=max(
+                    0,
+                    int(emergency.required_quantity or 0)
+                    - int(emergency.available_quantity or 0),
+                )
             )
         )
 
