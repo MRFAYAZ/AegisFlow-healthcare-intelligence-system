@@ -58,6 +58,18 @@ def disable_integration_source(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.post("/sources/{source_id}/rotate-key", response_model=IntegrationSourceCreated)
+def rotate_integration_key(
+    source_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRoleEnum.SYSTEM_ADMIN])),
+):
+    try:
+        return IntegrationService(db).rotate_source_key(source_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.post(
     "/sources/{source_id}/medicine-mappings",
     response_model=IntegrationMedicineMappingResponse,
