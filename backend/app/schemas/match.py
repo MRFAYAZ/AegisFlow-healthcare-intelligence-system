@@ -18,7 +18,8 @@ class EmergencyMatchResponse(BaseModel):
     facility_id: UUID
     facility_name: str
     facility_type: str
-    available_quantity: int = Field(ge=0)
+    aggregate_available_quantity: int = Field(ge=0)
+    available_quantity: int = Field(ge=0, description="Available stock supported by unexpired, batch-traceable lot records.")
     transferable_quantity: int = Field(ge=0)
     suggested_quantity: int = Field(ge=0)
     distance_km: float = Field(ge=0, description="Straight-line geographic distance, not road distance.")
