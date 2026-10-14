@@ -1,8 +1,7 @@
 """Authenticated, facility-scoped inventory snapshot ingestion."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from hashlib import sha256
-import json
 import secrets
 from uuid import UUID
 
@@ -11,6 +10,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.enums import SeverityEnum, TransferStatusEnum
+from app.engines.integration.snapshot_contract import (
+    canonical_snapshot_hash,
+    validate_replay_payload,
+    validate_snapshot_timestamp,
+)
 from app.models.facility import Facility
 from app.models.integration_event import IntegrationEvent
 from app.models.integration_medicine_mapping import IntegrationMedicineMapping
@@ -299,12 +303,7 @@ class IntegrationService:
         try:
             source = self._authenticate_source(credential)
             serialized_payload = payload.model_dump(mode="json")
-            canonical_json = json.dumps(
-                serialized_payload,
-                sort_keys=True,
-                separators=(",", ":"),
-            )
-            payload_hash = sha256(canonical_json.encode("utf-8")).hexdigest()
+            payload_hash = canonical_snapshot_hash(serialized_payload)
 
             prior_event = self.db.execute(
                 select(IntegrationEvent)
@@ -315,24 +314,19 @@ class IntegrationService:
                 .with_for_update()
             ).scalar_one_or_none()
             if prior_event is not None:
-                if prior_event.payload_hash != payload_hash:
-                    raise ValueError(
-                        "external_event_id was already used with a different payload; "
-                        "use a new event ID for changed content."
-                    )
+                validate_replay_payload(prior_event.payload_hash, payload_hash)
                 self.db.commit()
                 response = dict(prior_event.response_payload or {})
                 response["idempotent_replay"] = True
                 response["message"] = "Identical snapshot replay accepted; no inventory changes were applied."
                 return response
 
-            if source.last_snapshot_at is not None and payload.source_timestamp <= source.last_snapshot_at:
-                raise ValueError(
-                    "Snapshot is stale: source_timestamp must be newer than the last accepted snapshot."
-                )
             now = self._now()
-            if payload.source_timestamp > now.replace(microsecond=0) + timedelta(minutes=5):
-                raise ValueError("source_timestamp is more than five minutes in the future.")
+            validate_snapshot_timestamp(
+                source_timestamp=payload.source_timestamp,
+                last_accepted_timestamp=source.last_snapshot_at,
+                now=now,
+            )
 
             external_codes = {item.external_medicine_code for item in payload.items}
             mappings = self.db.execute(
