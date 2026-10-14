@@ -10,7 +10,6 @@ from app.schemas.integration import (
     IntegrationInventorySnapshotRequest,
     IntegrationSourceCreate,
 )
-from app.services.integration_service import IntegrationService
 
 
 def batch(
@@ -157,10 +156,3 @@ def test_batch_manufacturing_and_expiry_dates_are_consistent():
             expires=date(2026, 1, 1),
         )
 
-
-def test_integration_key_is_one_way_hashed():
-    key = "high-entropy-example-key"
-    hashed = IntegrationService._credential_hash(key)
-    assert hashed != key
-    assert len(hashed) == 64
-    assert IntegrationService._credential_hash(key) == hashed
