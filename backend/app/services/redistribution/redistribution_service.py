@@ -18,6 +18,7 @@ from app.models.medicine import Medicine
 from app.models.facility_user import FacilityUser
 from app.models.inventory import InventoryBatch, InventoryCurrent
 from app.models.transfer_batch_allocation import TransferBatchAllocation
+from app.models.emergency_timeline_event import EmergencyTimelineEvent
 from app.models.redistribution import TransferRequest
 from app.services.emergency.matching_service import MatchingService
 from app.services.inventory.shortage_service import ShortageService
@@ -35,6 +36,33 @@ class RedistributionService:
     @staticmethod
     def _now() -> datetime:
         return datetime.now(timezone.utc)
+
+    def _record_timeline_event(
+        self,
+        emergency_case_id,
+        transfer_id,
+        actor_user_id,
+        event_type: str,
+        title: str,
+        detail: str,
+        payload: dict | None = None,
+        occurred_at: datetime | None = None,
+    ) -> None:
+        """Append an operational event to the same transaction as its state change."""
+        if emergency_case_id is None:
+            return
+        self.db.add(
+            EmergencyTimelineEvent(
+                emergency_case_id=emergency_case_id,
+                transfer_id=transfer_id,
+                actor_user_id=actor_user_id,
+                event_type=event_type,
+                title=title,
+                detail=detail,
+                event_payload=payload or {},
+                occurred_at=occurred_at or self._now(),
+            )
+        )
 
     def _require_hospital_membership(self, user, facility_id: UUID) -> None:
         if user.role in {UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR}:
@@ -186,6 +214,24 @@ class RedistributionService:
 
             emergency.emergency_status = EmergencyStatusEnum.MATCHING
             self.db.flush()
+            for transfer in created:
+                self._record_timeline_event(
+                    emergency_case_id=emergency.emergency_case_id,
+                    transfer_id=transfer.transfer_id,
+                    actor_user_id=user.user_id,
+                    event_type="TRANSFER_REQUESTED",
+                    title="Supply transfer requested",
+                    detail=(
+                        f"{transfer.requested_quantity} units of the requested medicine "
+                        f"were requested from {transfer.source_facility.facility_name if transfer.source_facility else 'a donor facility'}."
+                    ),
+                    payload={
+                        "requested_quantity": transfer.requested_quantity,
+                        "donor_facility_id": str(transfer.from_facility_id),
+                        "receiving_facility_id": str(transfer.to_facility_id),
+                    },
+                    occurred_at=now,
+                )
             transfer_ids = [transfer.transfer_id for transfer in created]
             recommended_quantity = sum(transfer.requested_quantity for transfer in created)
             self.db.commit()
@@ -324,6 +370,16 @@ class RedistributionService:
             transfer.approved_by = user.user_id
             transfer.approved_at = self._now()
             transfer.cascade_safe = True
+            self._record_timeline_event(
+                emergency_case_id=transfer.emergency_case_id,
+                transfer_id=transfer.transfer_id,
+                actor_user_id=user.user_id,
+                event_type="TRANSFER_APPROVED",
+                title="Hospital approved transfer",
+                detail=f"{approved_quantity} units approved; donor inventory and FEFO lots reserved.",
+                payload={"approved_quantity": approved_quantity},
+                occurred_at=transfer.approved_at,
+            )
             self.db.commit()
             self.db.refresh(transfer)
             return self._serialize_transfer(transfer)
@@ -344,6 +400,16 @@ class RedistributionService:
             transfer.approved_by = user.user_id
             transfer.approved_at = self._now()
             transfer.rejection_reason = cleaned_reason
+            self._record_timeline_event(
+                emergency_case_id=transfer.emergency_case_id,
+                transfer_id=transfer.transfer_id,
+                actor_user_id=user.user_id,
+                event_type="TRANSFER_REJECTED",
+                title="Hospital rejected transfer",
+                detail=cleaned_reason,
+                payload={"reason": cleaned_reason},
+                occurred_at=transfer.approved_at,
+            )
             self.db.commit()
             self.db.refresh(transfer)
             return {
@@ -409,6 +475,19 @@ class RedistributionService:
                 status=DispatchStatusEnum.ASSIGNED,
             )
             self.db.add(dispatch)
+            self.db.flush()
+            self._record_timeline_event(
+                emergency_case_id=transfer.emergency_case_id,
+                transfer_id=transfer.transfer_id,
+                actor_user_id=user.user_id,
+                event_type="DISPATCH_ASSIGNED",
+                title="Transport assigned",
+                detail=f"{dispatch.transport_type}" + (f" — {dispatch.vehicle_reference}" if dispatch.vehicle_reference else ""),
+                payload={
+                    "transport_type": dispatch.transport_type,
+                    "vehicle_reference": dispatch.vehicle_reference,
+                },
+            )
             self.db.commit()
             self.db.refresh(dispatch)
             return {
@@ -454,6 +533,19 @@ class RedistributionService:
             dispatch.status = DispatchStatusEnum.IN_TRANSIT
             dispatch.dispatched_at = now
             transfer.transfer_status = TransferStatusEnum.IN_TRANSIT
+            self._record_timeline_event(
+                emergency_case_id=transfer.emergency_case_id,
+                transfer_id=transfer.transfer_id,
+                actor_user_id=user.user_id,
+                event_type="SHIPMENT_DISPATCHED",
+                title="Shipment entered transit",
+                detail=f"Shipment dispatched via {dispatch.transport_type}.",
+                payload={
+                    "transport_type": dispatch.transport_type,
+                    "vehicle_reference": dispatch.vehicle_reference,
+                },
+                occurred_at=now,
+            )
             self.db.commit()
             return {
                 "transfer_id": transfer_id,
@@ -591,6 +683,16 @@ class RedistributionService:
             transfer.completed_at = now
             dispatch.status = DispatchStatusEnum.DELIVERED
             dispatch.delivered_at = now
+            self._record_timeline_event(
+                emergency_case_id=transfer.emergency_case_id,
+                transfer_id=transfer.transfer_id,
+                actor_user_id=user.user_id,
+                event_type="SHIPMENT_DELIVERED",
+                title="Delivery confirmed",
+                detail=f"{quantity} units delivered; destination inventory and batch records settled.",
+                payload={"delivered_quantity": quantity},
+                occurred_at=now,
+            )
 
             emergency_payload = None
             if transfer.emergency_case_id:
@@ -630,6 +732,34 @@ class RedistributionService:
                         "required_quantity": required,
                         "status": emergency.emergency_status.value,
                     }
+                    if emergency.emergency_status == EmergencyStatusEnum.RESOLVED:
+                        self._record_timeline_event(
+                            emergency_case_id=emergency.emergency_case_id,
+                            transfer_id=transfer.transfer_id,
+                            actor_user_id=user.user_id,
+                            event_type="EMERGENCY_RESOLVED",
+                            title="Emergency target fulfilled",
+                            detail=f"Receiving facility now has {emergency.available_quantity} units against a {required}-unit target.",
+                            payload={
+                                "available_quantity": int(emergency.available_quantity or 0),
+                                "required_quantity": required,
+                            },
+                            occurred_at=now,
+                        )
+                    elif emergency.emergency_status == EmergencyStatusEnum.PARTIALLY_RESOLVED:
+                        self._record_timeline_event(
+                            emergency_case_id=emergency.emergency_case_id,
+                            transfer_id=transfer.transfer_id,
+                            actor_user_id=user.user_id,
+                            event_type="EMERGENCY_PARTIALLY_RESOLVED",
+                            title="Emergency partially fulfilled",
+                            detail=f"Receiving facility has {emergency.available_quantity} units against a {required}-unit target.",
+                            payload={
+                                "available_quantity": int(emergency.available_quantity or 0),
+                                "required_quantity": required,
+                            },
+                            occurred_at=now,
+                        )
 
             self.db.commit()
             return {
