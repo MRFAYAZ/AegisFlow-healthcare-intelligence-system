@@ -57,6 +57,7 @@ export function LoginPage() {
         name: String(currentUser.full_name),
         email: String(currentUser.email),
         role: normalizedRole,
+        facilityIds: currentUser.facility_ids ?? [],
       })
 
       toast.success(
