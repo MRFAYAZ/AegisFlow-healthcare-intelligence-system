@@ -1,0 +1,39 @@
+name: AegisFlow zeroth-review checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/zeroth-review-upscale]
+
+jobs:
+  donor-matching-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - name: Test geospatial ranking and explanation
+        env:
+          PYTHONPATH: backend
+        run: pytest -q backend/tests/test_geospatial_matching.py
+      - name: Compile backend Python sources
+        run: python -m compileall -q backend/app backend/tests
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Type-check and build frontend
+        working-directory: frontend
+        run: npm run build
