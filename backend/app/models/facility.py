@@ -68,6 +68,13 @@ class Facility(Base, TimestampMixin):
         default=True
     )
 
+    cold_chain_capable: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        server_default="false",
+    )
+
     location = relationship(
         "Location",
         back_populates="facilities"
