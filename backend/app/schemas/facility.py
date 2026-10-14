@@ -104,3 +104,19 @@ class FacilityResponse(BaseSchema):
     city: str
     state: str
     address_line: Optional[str] = None
+
+
+class FacilityNetworkResponse(BaseSchema):
+    """Minimal facility attributes shared across the healthcare network."""
+
+    facility_id: UUID
+    facility_name: str
+    facility_type: FacilityTypeEnum
+    location_id: UUID
+    is_active: bool
+    cold_chain_capable: bool = False
+    latitude: float
+    longitude: float
+    city: str
+    state: str
+    address_line: Optional[str] = None
