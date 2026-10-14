@@ -55,10 +55,18 @@ export const emergencyAPI = {
 
 // Transfers
 export const transferAPI = {
-  getAll: () => api.get('/transfers'),
-  create: (data: unknown) => api.post('/transfers', data),
-  approve: (id: string) => api.post(`/transfers/${id}/approve`),
-  markDelivered: (id: string) => api.post(`/transfers/${id}/delivered`),
+  getAll: () => api.get('/redistribution'),
+  approve: (id: string, approvedQuantity: number) =>
+    api.post(`/redistribution/${id}/approve`, { approved_quantity: approvedQuantity }),
+  reject: (id: string, reason: string) =>
+    api.post(`/redistribution/${id}/reject`, { reason }),
+  assignDispatch: (id: string, transportType: string, vehicleReference?: string) =>
+    api.post(`/redistribution/${id}/assign`, {
+      transport_type: transportType,
+      vehicle_reference: vehicleReference || undefined,
+    }),
+  dispatch: (id: string) => api.post(`/redistribution/${id}/dispatch`),
+  markDelivered: (id: string) => api.post(`/redistribution/${id}/delivered`),
 }
 
 // Shortages
