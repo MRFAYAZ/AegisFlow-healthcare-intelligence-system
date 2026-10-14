@@ -142,3 +142,14 @@ class IntegrationSnapshotResponse(BaseModel):
     source_timestamp: datetime
     records_processed: int
     message: str
+
+
+class IntegrationEventResponse(BaseModel):
+    integration_event_id: UUID
+    source_id: UUID
+    external_event_id: str
+    source_timestamp: datetime
+    status: str
+    records_processed: int = Field(ge=0)
+    received_at: datetime
+    processed_at: datetime
