@@ -79,3 +79,22 @@ class Facility(Base, TimestampMixin):
     )
 
     
+    @property
+    def latitude(self) -> float | None:
+        return float(self.location.latitude) if self.location else None
+
+    @property
+    def longitude(self) -> float | None:
+        return float(self.location.longitude) if self.location else None
+
+    @property
+    def city(self) -> str | None:
+        return self.location.city if self.location else None
+
+    @property
+    def state(self) -> str | None:
+        return self.location.state if self.location else None
+
+    @property
+    def address_line(self) -> str | None:
+        return self.location.address_line if self.location else None
