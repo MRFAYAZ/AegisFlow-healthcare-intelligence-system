@@ -104,6 +104,31 @@ class IntegrationService:
         ).scalars().all()
         return [self._source_response(source) for source in sources]
 
+    def list_snapshot_events(self, source_id: UUID) -> list[dict]:
+        source = self.db.get(IntegrationSource, source_id)
+        if source is None:
+            raise LookupError("Integration source not found.")
+
+        events = self.db.execute(
+            select(IntegrationEvent)
+            .where(IntegrationEvent.source_id == source_id)
+            .order_by(IntegrationEvent.received_at.desc())
+            .limit(100)
+        ).scalars().all()
+        return [
+            {
+                "integration_event_id": event.integration_event_id,
+                "source_id": event.source_id,
+                "external_event_id": event.external_event_id,
+                "source_timestamp": event.source_timestamp,
+                "status": event.status,
+                "records_processed": event.records_processed,
+                "received_at": event.received_at,
+                "processed_at": event.processed_at,
+            }
+            for event in events
+        ]
+
     def deactivate_source(self, source_id: UUID) -> dict:
         source = self.db.execute(
             select(IntegrationSource)
