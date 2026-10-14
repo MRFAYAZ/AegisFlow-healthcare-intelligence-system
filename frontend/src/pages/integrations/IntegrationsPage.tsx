@@ -10,6 +10,7 @@ import type {
   IntegrationFacility,
   IntegrationMedicine,
   IntegrationMedicineMapping,
+  IntegrationSnapshotEvent,
   IntegrationSource,
   IntegrationSourceCreated,
 } from "../../types/integration"
@@ -65,6 +66,13 @@ export function IntegrationsPage() {
     enabled: Boolean(isAdmin && user?.id && selectedSourceId),
   })
   const mappings = mappingQuery.data ?? []
+  const eventQuery = useQuery<IntegrationSnapshotEvent[]>({
+    queryKey: ["integration-events", user?.id, selectedSourceId],
+    queryFn: async () => (await integrationAPI.getEvents(selectedSourceId)).data as IntegrationSnapshotEvent[],
+    enabled: Boolean(isAdmin && user?.id && selectedSourceId),
+    refetchInterval: 30000,
+  })
+  const snapshotEvents = eventQuery.data ?? []
 
   useEffect(() => {
     if (!selectedSourceId && sources.length > 0) setSelectedSourceId(sources[0].source_id)
@@ -307,6 +315,42 @@ export function IntegrationsPage() {
               </div>
             )}
           </>
+        )}
+      </section>
+
+      <section className="panel">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="panel-title">Accepted snapshot history</div>
+            <p className="mt-1 text-sm text-ink-muted">
+              Up to 100 successful receipts for the selected source. Rejected requests are returned as HTTP errors and are not recorded in this receipt table.
+            </p>
+          </div>
+          <Button variant="ghost" size="sm" disabled={!selectedSourceId} onClick={() => queryClient.invalidateQueries({ queryKey: ["integration-events", user?.id, selectedSourceId] })}>Refresh history</Button>
+        </div>
+        {!selectedSourceId && <p className="mt-3 text-sm text-ink-muted">Select a source to inspect accepted snapshots.</p>}
+        {selectedSourceId && eventQuery.isLoading && <p className="mt-3 text-sm text-ink-muted">Loading accepted receipts…</p>}
+        {eventQuery.isError && <div role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{errorMessage(eventQuery.error)}</div>}
+        {selectedSourceId && !eventQuery.isLoading && !eventQuery.isError && snapshotEvents.length === 0 && (
+          <div className="mt-3 rounded-lg border border-dashed border-slate-300 p-5 text-sm text-ink-muted">No successful inventory snapshots have been accepted for this source yet.</div>
+        )}
+        {snapshotEvents.length > 0 && (
+          <div className="mt-4 overflow-x-auto">
+            <table className="af-table min-w-[740px]">
+              <thead><tr><th>External event ID</th><th>Source timestamp</th><th>Received at</th><th>Records</th><th>Status</th></tr></thead>
+              <tbody>
+                {snapshotEvents.map((event) => (
+                  <tr key={event.integration_event_id}>
+                    <td className="font-medium">{event.external_event_id}</td>
+                    <td>{dateLabel(event.source_timestamp)}</td>
+                    <td>{dateLabel(event.received_at)}</td>
+                    <td>{event.records_processed}</td>
+                    <td><Badge variant={event.status === "APPLIED" ? "green" : "orange"}>{event.status}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
