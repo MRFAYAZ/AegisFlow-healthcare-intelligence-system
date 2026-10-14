@@ -50,9 +50,26 @@ def upgrade() -> None:
         "emergency_timeline_events",
         ["transfer_id"],
     )
+    # Make the event table append-only even if a later application bug issues
+    # UPDATE or DELETE against it.
+    op.execute("""
+    CREATE OR REPLACE FUNCTION reject_emergency_timeline_event_mutation()
+    RETURNS trigger AS $
+    BEGIN
+        RAISE EXCEPTION 'Emergency timeline events are append-only';
+    END;
+    $ LANGUAGE plpgsql;
+    """)
+    op.execute("""
+    CREATE TRIGGER trg_emergency_timeline_events_append_only
+    BEFORE UPDATE OR DELETE ON emergency_timeline_events
+    FOR EACH ROW EXECUTE FUNCTION reject_emergency_timeline_event_mutation();
+    """)
 
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER IF EXISTS trg_emergency_timeline_events_append_only ON emergency_timeline_events")
+    op.execute("DROP FUNCTION IF EXISTS reject_emergency_timeline_event_mutation()")
     op.drop_index("idx_emergency_timeline_transfer", table_name="emergency_timeline_events")
     op.drop_index("idx_emergency_timeline_case_time", table_name="emergency_timeline_events")
     op.drop_table("emergency_timeline_events")
