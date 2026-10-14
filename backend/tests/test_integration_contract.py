@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import os
 from uuid import uuid4
 
@@ -17,6 +17,11 @@ from app.schemas.integration import (
     IntegrationSourceCreate,
 )
 from app.services.integration_service import IntegrationService
+from app.engines.integration.snapshot_contract import (
+    canonical_snapshot_hash,
+    validate_replay_payload,
+    validate_snapshot_timestamp,
+)
 
 
 def batch(
@@ -171,3 +176,55 @@ def test_integration_key_storage_uses_a_one_way_sha256_digest():
     assert digest != raw_key
     assert len(digest) == 64
     assert IntegrationService._credential_hash(raw_key) == digest
+
+
+def test_canonical_hash_is_independent_of_json_key_order():
+    first = {"event": "EVT-10", "stock": {"medicine": "MED-1", "quantity": 10}}
+    second = {"stock": {"quantity": 10, "medicine": "MED-1"}, "event": "EVT-10"}
+    assert canonical_snapshot_hash(first) == canonical_snapshot_hash(second)
+
+
+def test_replay_accepts_identical_payload_hash_and_rejects_changed_content():
+    digest = canonical_snapshot_hash({"event": "EVT-11", "quantity": 10})
+    validate_replay_payload(digest, digest)
+    changed = canonical_snapshot_hash({"event": "EVT-11", "quantity": 11})
+    with pytest.raises(ValueError, match="different payload"):
+        validate_replay_payload(digest, changed)
+
+
+def test_snapshot_timestamp_must_be_newer_than_last_accepted_snapshot():
+    now = datetime(2026, 10, 14, 10, 30, tzinfo=timezone.utc)
+    last = datetime(2026, 10, 14, 10, 0, tzinfo=timezone.utc)
+
+    validate_snapshot_timestamp(
+        datetime(2026, 10, 14, 10, 1, tzinfo=timezone.utc),
+        last,
+        now,
+    )
+    with pytest.raises(ValueError, match="must be newer"):
+        validate_snapshot_timestamp(last, last, now)
+    with pytest.raises(ValueError, match="must be newer"):
+        validate_snapshot_timestamp(
+            datetime(2026, 10, 14, 9, 59, tzinfo=timezone.utc),
+            last,
+            now,
+        )
+
+
+def test_snapshot_timestamp_rejects_unreasonably_future_clock():
+    now = datetime(2026, 10, 14, 10, 0, tzinfo=timezone.utc)
+    with pytest.raises(ValueError, match="future"):
+        validate_snapshot_timestamp(
+            now + timedelta(minutes=6),
+            None,
+            now,
+        )
+
+
+def test_snapshot_timestamp_rejects_naive_datetime():
+    with pytest.raises(ValueError, match="timezone"):
+        validate_snapshot_timestamp(
+            datetime(2026, 10, 14, 10, 0),
+            None,
+            datetime(2026, 10, 14, 10, 0, tzinfo=timezone.utc),
+        )
