@@ -13,67 +13,68 @@ const severityVariant: Record<string, "red" | "orange" | "yellow"> = {
   WARNING: "yellow",
 }
 
-const statusVariant: Record<string, "red" | "orange" | "green"> = {
+const statusVariant: Record<string, "red" | "orange" | "green" | "blue"> = {
   ACTIVE: "red",
   MATCHING: "orange",
+  PARTIALLY_RESOLVED: "blue",
   RESOLVED: "green",
+  CLOSED: "green",
 }
 
 export function EmergencyCard({ emergency, onView }: Props) {
-  const matchScore = Number(emergency.match_score ?? 0)
-  const eta = emergency.estimated_eta_minutes ?? Math.max(10, Math.round((emergency.transfer_distance_km ?? 0) * 2.2))
-  const patients = Math.max(1, Math.ceil((emergency.required_quantity ?? 0) / 3))
-  const transferStatus = emergency.transfer_status ?? "PENDING"
+  const remaining = Math.max(
+    0,
+    Number(emergency.required_quantity ?? 0) - Number(emergency.available_quantity ?? 0),
+  )
+  const hasTransfer = Boolean(emergency.transfer_id)
 
   return (
-    <div className="rounded-xl border border-border bg-white shadow-sm transition-all hover:shadow-md">
+    <article className="rounded-xl border border-border bg-white shadow-sm transition-all hover:shadow-md">
       <div className="flex items-center justify-between border-b border-border p-5">
         <div>
           <div className="text-lg font-semibold text-ink">{emergency.medicine_name}</div>
           <div className="mt-1 text-sm text-ink-muted">{emergency.facility_name}</div>
         </div>
-        <Badge variant={severityVariant[emergency.severity]}>{emergency.severity}</Badge>
+        <Badge variant={severityVariant[emergency.severity] ?? "yellow"}>{emergency.severity}</Badge>
       </div>
 
       <div className="space-y-3 p-5">
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-slate-50 p-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">AI Match</p>
-            <p className="mt-1 font-semibold text-slate-900">{matchScore.toFixed(0)}%</p>
-          </div>
-          <div className="rounded-lg bg-slate-50 p-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">ETA</p>
-            <p className="mt-1 font-semibold text-slate-900">{eta} min</p>
-          </div>
-          <div className="rounded-lg bg-slate-50 p-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Transfer</p>
-            <p className="mt-1 font-semibold text-slate-900">{transferStatus}</p>
-          </div>
-          <div className="rounded-lg bg-slate-50 p-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Patients</p>
-            <p className="mt-1 font-semibold text-slate-900">{patients}</p>
-          </div>
+          <Metric label="Remaining demand" value={`${remaining} units`} />
+          <Metric label="Target quantity" value={`${emergency.required_quantity} units`} />
+          <Metric
+            label="Match score"
+            value={hasTransfer && emergency.match_score !== null
+              ? `${Number(emergency.match_score).toFixed(1)} / 100`
+              : "Not ranked yet"}
+          />
+          <Metric
+            label="Geographic distance"
+            value={hasTransfer && emergency.transfer_distance_km !== null
+              ? `${Number(emergency.transfer_distance_km).toFixed(1)} km straight-line`
+              : "Not available"}
+          />
         </div>
 
-        <div className="flex justify-between">
-          <span className="text-ink-muted">Shortage Score</span>
-          <strong>{emergency.shortage_score}</strong>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-ink-muted">Transfer state</span>
+          <Badge variant={hasTransfer ? "blue" : "orange"}>
+            {emergency.transfer_status?.replaceAll("_", " ") ?? "NOT REQUESTED"}
+          </Badge>
         </div>
-        <div className="flex justify-between">
-          <span className="text-ink-muted">Required</span>
-          <strong>{emergency.required_quantity}</strong>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-ink-muted">Emergency state</span>
+          <Badge variant={statusVariant[emergency.emergency_status] ?? "orange"}>
+            {emergency.emergency_status.replaceAll("_", " ")}
+          </Badge>
         </div>
-        <div className="flex justify-between">
-          <span className="text-ink-muted">Available</span>
-          <strong className="text-red-600">{emergency.available_quantity}</strong>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-ink-muted">Shortage score</span>
+          <strong>{Number(emergency.shortage_score).toFixed(1)} / 100</strong>
         </div>
-        <div className="flex justify-between">
-          <span className="text-ink-muted">Radius</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-ink-muted">Search radius</span>
           <strong>{emergency.emergency_radius_km} km</strong>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-ink-muted">Status</span>
-          <Badge variant={statusVariant[emergency.emergency_status]}>{emergency.emergency_status}</Badge>
         </div>
       </div>
 
@@ -81,10 +82,19 @@ export function EmergencyCard({ emergency, onView }: Props) {
         <Button variant="ghost" className="flex-1" onClick={() => onView(emergency)}>
           View Details
         </Button>
-        <Button variant="red" className="flex-1" onClick={() => onView(emergency)}>
-          Dispatch
+        <Button variant="primary" className="flex-1" onClick={() => onView(emergency)}>
+          Review Supply Options
         </Button>
       </div>
+    </article>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-slate-50 p-3">
+      <p className="text-[10px] uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 break-words font-semibold text-slate-900">{value}</p>
     </div>
   )
 }
