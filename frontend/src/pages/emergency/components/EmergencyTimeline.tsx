@@ -1,65 +1,99 @@
+import { useQuery } from "@tanstack/react-query"
+import { emergencyAPI } from "../../../services/api"
 import type { Emergency } from "../../../types/emergency"
 
+interface TimelineEvent {
+  timestamp: string
+  event_type: string
+  title: string
+  detail: string
+  transfer_id: string | null
+}
+
+interface TimelineResponse {
+  emergency_case_id: string
+  timeline_scope: string
+  events: TimelineEvent[]
+}
+
 interface Props {
-    emergency: Emergency
+  emergency: Emergency
 }
 
 export function EmergencyTimeline({ emergency }: Props) {
-    const hasRecommendation = Boolean(
-        emergency.donor_facility ||
-        emergency.match_score !== null ||
-        emergency.transfer_distance_km !== null ||
-        emergency.approved_quantity !== null
-    )
+  const { data, isLoading, isError, error } = useQuery<TimelineResponse>({
+    queryKey: ["emergency-timeline", emergency.emergency_case_id],
+    queryFn: async () => {
+      const response = await emergencyAPI.getTimeline(emergency.emergency_case_id)
+      return response.data
+    },
+    enabled: Boolean(emergency.emergency_case_id),
+    refetchInterval: 10_000,
+  })
 
-    const events = [
-        { time: "11:35", title: "Emergency Created", detail: "Critical shortage detected for ICU inventory" },
-        { time: "11:38", title: "AI Recommendation Generated", detail: hasRecommendation ? "Donor ranking finalized" : "Awaiting donor ranking" },
-        { time: "11:41", title: "Dispatch Request Sent", detail: `${emergency.donor_facility ?? "Recommended donor"} selected for hospital review` },
-        { time: "11:48", title: "Hospital Approval Pending", detail: emergency.transfer_status === "PENDING" ? "Awaiting response from hospital admin" : "Approval state updated" },
-        { time: "11:52", title: "Courier Allocation Pending", detail: emergency.transfer_status === "APPROVED" ? "Dispatcher assignment queued" : "Waiting for approval" },
-        { time: "12:05", title: "In Transit", detail: emergency.transfer_status === "IN_TRANSIT" ? "Vehicle is en route" : "Transit will start once approval is granted" },
-        { time: "12:20", title: "Delivered", detail: emergency.transfer_status === "COMPLETED" ? "Inventory received and closed" : "Delivery completion pending" },
-    ]
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-slate-900">Recorded operational timeline</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Events are generated from timestamps persisted on the emergency, transfer and dispatch records.
+        </p>
+      </div>
 
-    const currentIndex = !hasRecommendation
-        ? 1
-        : emergency.transfer_status === "PENDING"
-            ? 3
-            : emergency.transfer_status === "APPROVED"
-                ? 4
-                : emergency.transfer_status === "IN_TRANSIT"
-                    ? 5
-                    : emergency.transfer_status === "COMPLETED"
-                        ? 6
-                        : 2
+      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+        This is a persisted-milestone timeline, not yet a complete append-only audit event stream.
+      </div>
 
-    return (
-        <div className="rounded-xl border bg-white p-5">
-            <div className="mb-5 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-900">Operational Timeline</h3>
-                <p className="text-sm text-gray-500">Last updated {new Date(emergency.triggered_at).toLocaleString()}</p>
-            </div>
-
-            <div className="space-y-4">
-                {events.map((event, index) => {
-                    const isComplete = index <= currentIndex
-                    return (
-                        <div key={event.title} className="flex items-start gap-3">
-                            <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-white ${isComplete ? "bg-green-600" : "bg-gray-300"}`}>
-                                {isComplete ? "✓" : index + 1}
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-medium text-slate-900">{event.title}</p>
-                                    <span className="text-sm text-slate-500">{event.time}</span>
-                                </div>
-                                <p className="text-sm text-slate-500">{event.detail}</p>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
+      {isLoading && (
+        <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">
+          Loading recorded milestones…
         </div>
-    )
+      )}
+
+      {isError && (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          The timeline could not be loaded. {(error as Error).message}
+        </div>
+      )}
+
+      {!isLoading && !isError && data?.events.length === 0 && (
+        <div className="rounded-lg border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">
+          No recorded milestones were returned for this emergency.
+        </div>
+      )}
+
+      {!isLoading && !isError && (data?.events.length ?? 0) > 0 && (
+        <ol className="space-y-4">
+          {data!.events.map((event, index) => (
+            <li key={`${event.timestamp}-${event.event_type}-${event.transfer_id ?? "emergency"}`} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+                  {index + 1}
+                </div>
+                {index < data!.events.length - 1 && <div className="mt-1 min-h-6 w-px flex-1 bg-slate-200" />}
+              </div>
+              <div className="min-w-0 flex-1 rounded-lg border border-slate-200 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="font-medium text-slate-900">{event.title}</p>
+                  <time className="text-xs text-slate-500" dateTime={event.timestamp}>
+                    {new Date(event.timestamp).toLocaleString()}
+                  </time>
+                </div>
+                <p className="mt-1 text-sm text-slate-600">{event.detail}</p>
+                {event.transfer_id && (
+                  <p className="mt-2 text-xs text-slate-400">
+                    Transfer #{event.transfer_id.slice(0, 8)}
+                  </p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <p className="mt-4 text-xs text-slate-400">
+        {data?.timeline_scope ?? "Timeline source: emergency, transfer and dispatch records."}
+      </p>
+    </section>
+  )
 }
