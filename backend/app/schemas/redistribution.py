@@ -9,7 +9,8 @@ from pydantic import (
 )
 
 from app.core.enums import (
-    TransferStatusEnum
+    TransferStatusEnum,
+    DispatchStatusEnum
 )
 
 from app.schemas.common import (
@@ -72,6 +73,15 @@ class TransferResponse(BaseSchema):
     requested_at: datetime
 
     completed_at: datetime | None = None
+
+    approved_at: datetime | None = None
+    rejection_reason: str | None = None
+    dispatch_id: UUID | None = None
+    dispatch_status: DispatchStatusEnum | None = None
+    transport_type: str | None = None
+    vehicle_reference: str | None = None
+    dispatched_at: datetime | None = None
+    delivered_at: datetime | None = None
 
 # =========================================================
 # TRANSFER DECISION + DISPATCH REQUESTS
