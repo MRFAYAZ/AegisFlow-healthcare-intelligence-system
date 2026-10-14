@@ -9,6 +9,7 @@ from app.engines.inventory.medicine_safety import safe_transferable_quantity
 from app.models.facility import Facility
 from app.models.inventory import InventoryBatch, InventoryCurrent
 from app.models.location import Location
+from app.models.medicine import Medicine
 
 
 class MatchingService:
@@ -34,6 +35,12 @@ class MatchingService:
         requesting_location = self.db.get(Location, requesting_facility.location_id)
         if requesting_location is None:
             raise ValueError("Requesting facility location was not found.")
+
+        medicine = self.db.get(Medicine, medicine_id)
+        if medicine is None:
+            raise ValueError("Medicine was not found.")
+        if medicine.requires_cold_chain and not requesting_facility.cold_chain_capable:
+            return []
 
         query = (
             select(InventoryCurrent, Facility, Location)
@@ -64,6 +71,10 @@ class MatchingService:
         candidates: list[dict] = []
 
         for inventory, facility, location in rows:
+            # Cold-chain is a hard eligibility filter, not a ranking bonus.
+            if medicine.requires_cold_chain and not facility.cold_chain_capable:
+                continue
+
             # Batch traceability is a hard eligibility requirement in this
             # medicine-safety upgrade. An aggregate total alone cannot prove
             # that the stock is in date, so untracked stock is not offered.
@@ -102,6 +113,8 @@ class MatchingService:
                     "facility_id": str(facility.facility_id),
                     "facility_name": facility.facility_name,
                     "facility_type": facility.facility_type.value,
+                    "requires_cold_chain": bool(medicine.requires_cold_chain),
+                    "cold_chain_capable": bool(facility.cold_chain_capable),
                     "available_quantity": int(inventory.available_stock or 0),
                     "transferable_quantity": transferable_quantity,
                     "suggested_quantity": min(transferable_quantity, requested_quantity),
