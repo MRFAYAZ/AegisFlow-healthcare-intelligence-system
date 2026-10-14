@@ -72,3 +72,19 @@ class TransferResponse(BaseSchema):
     requested_at: datetime
 
     completed_at: datetime | None = None
+
+# =========================================================
+# TRANSFER DECISION + DISPATCH REQUESTS
+# =========================================================
+
+class TransferApprovalRequest(BaseModel):
+    approved_quantity: int = Field(gt=0)
+
+
+class TransferRejectionRequest(BaseModel):
+    reason: str = Field(min_length=5, max_length=1000)
+
+
+class DispatchAssignmentRequest(BaseModel):
+    transport_type: str = Field(min_length=2, max_length=100)
+    vehicle_reference: str | None = Field(default=None, max_length=100)
