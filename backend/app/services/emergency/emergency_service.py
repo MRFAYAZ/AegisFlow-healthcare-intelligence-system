@@ -36,6 +36,71 @@ class EmergencyService:
         payload["estimated_eta_minutes"] = None
         return payload
 
+    def _facility_ids_for_hospital_admin(self, user):
+        from app.core.enums import UserRoleEnum
+        from app.models.facility_user import FacilityUser
+        from sqlalchemy import select
+
+        return list(
+            self.db.execute(
+                select(FacilityUser.facility_id).where(
+                    FacilityUser.user_id == user.user_id,
+                    FacilityUser.assigned_role == UserRoleEnum.HOSPITAL_ADMIN,
+                )
+            ).scalars().all()
+        )
+
+    def get_all_emergencies_for_user(self, user):
+        from app.core.enums import UserRoleEnum
+
+        if user.role in {UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR}:
+            return self.get_all_emergencies()
+        if user.role != UserRoleEnum.HOSPITAL_ADMIN:
+            raise PermissionError("This role cannot access emergency case records.")
+
+        facility_ids = set(self._facility_ids_for_hospital_admin(user))
+        if not facility_ids:
+            raise PermissionError("No hospital facility is assigned to this administrator.")
+        rows = self.emergency_repository.get_all_emergencies()
+        return [
+            self._enrich_emergency_response(row)
+            for row in rows
+            if row["facility_id"] in facility_ids
+        ]
+
+    def get_active_emergencies_for_user(self, user):
+        from app.core.enums import EmergencyStatusEnum
+
+        return [
+            row for row in self.get_all_emergencies_for_user(user)
+            if row["emergency_status"] in {
+                EmergencyStatusEnum.ACTIVE,
+                EmergencyStatusEnum.MATCHING,
+            }
+        ]
+
+    def get_critical_emergencies_for_user(self, user):
+        from app.core.enums import SeverityEnum
+
+        return [
+            row for row in self.get_all_emergencies_for_user(user)
+            if row["severity"] in {SeverityEnum.CRITICAL, SeverityEnum.EMERGENCY}
+        ]
+
+    def get_dashboard_for_user(self, user):
+        from app.core.enums import EmergencyStatusEnum, SeverityEnum
+
+        emergencies = self.get_all_emergencies_for_user(user)
+        return {
+            "total_emergencies": len(emergencies),
+            "active": sum(row["emergency_status"] == EmergencyStatusEnum.ACTIVE for row in emergencies),
+            "matching": sum(row["emergency_status"] == EmergencyStatusEnum.MATCHING for row in emergencies),
+            "partially_resolved": sum(row["emergency_status"] == EmergencyStatusEnum.PARTIALLY_RESOLVED for row in emergencies),
+            "resolved": sum(row["emergency_status"] == EmergencyStatusEnum.RESOLVED for row in emergencies),
+            "critical": sum(row["severity"] == SeverityEnum.CRITICAL for row in emergencies),
+            "emergency": sum(row["severity"] == SeverityEnum.EMERGENCY for row in emergencies),
+        }
+
     def get_timeline_for_emergency(self, emergency_case_id, user) -> dict:
         from app.core.enums import UserRoleEnum
         from app.models.dispatch import TransferDispatch
