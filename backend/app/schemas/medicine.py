@@ -35,13 +35,17 @@ class MedicineCreate(BaseModel):
 
     is_critical: bool = False
 
+    requires_cold_chain: bool = False
+
     storage_conditions: str
 
     standard_lead_time_days: int = 0
 
     safety_stock_days: int = 3
 
-    unit_price: float = Field(
+    unit_price: float
+
+    requires_cold_chain: bool = False = Field(
         ge=0
     )
 
