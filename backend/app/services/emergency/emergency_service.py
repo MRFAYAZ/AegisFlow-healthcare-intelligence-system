@@ -102,9 +102,10 @@ class EmergencyService:
         }
 
     def get_timeline_for_emergency(self, emergency_case_id, user) -> dict:
-        from app.core.enums import UserRoleEnum
+        from app.core.enums import UserRoleEnum, EmergencyStatusEnum
         from app.models.dispatch import TransferDispatch
         from app.models.emergency import EmergencyCase
+        from app.models.emergency_timeline_event import EmergencyTimelineEvent
         from app.models.facility import Facility
         from app.models.facility_user import FacilityUser
         from app.models.redistribution import TransferRequest
@@ -128,19 +129,63 @@ class EmergencyService:
             raise PermissionError("This role cannot view network emergency timelines.")
 
         events: list[dict] = []
+        seen_events: set[tuple[str, str | None]] = set()
 
-        def add_event(timestamp, event_type: str, title: str, detail: str, transfer_id=None):
+        def add_event(
+            timestamp,
+            event_type: str,
+            title: str,
+            detail: str,
+            transfer_id=None,
+            event_payload: dict | None = None,
+            timeline_event_id=None,
+            actor_user_id=None,
+        ):
             if timestamp is None:
                 return
+            transfer_key = str(transfer_id) if transfer_id else None
+            event_key = (event_type, transfer_key)
+            # Prefer a first-class append-only event when one exists. Legacy
+            # timestamps fill only gaps for transfers that predate event logging.
+            if event_key in seen_events:
+                return
+            seen_events.add(event_key)
             events.append({
                 "_sort": timestamp,
                 "timestamp": timestamp.isoformat(),
                 "event_type": event_type,
                 "title": title,
                 "detail": detail,
-                "transfer_id": str(transfer_id) if transfer_id else None,
+                "transfer_id": transfer_key,
+                "timeline_event_id": str(timeline_event_id) if timeline_event_id else None,
+                "actor_user_id": str(actor_user_id) if actor_user_id else None,
+                "event_payload": event_payload or {},
+                "event_source": "APPEND_ONLY_EVENT" if timeline_event_id else "LEGACY_TIMESTAMP",
             })
 
+        saved_events = self.db.execute(
+            select(EmergencyTimelineEvent)
+            .where(EmergencyTimelineEvent.emergency_case_id == emergency_case_id)
+            .order_by(
+                EmergencyTimelineEvent.occurred_at.asc(),
+                EmergencyTimelineEvent.timeline_event_id.asc(),
+            )
+        ).scalars().all()
+
+        for event in saved_events:
+            add_event(
+                event.occurred_at,
+                event.event_type,
+                event.title,
+                event.detail,
+                event.transfer_id,
+                event_payload=event.event_payload,
+                timeline_event_id=event.timeline_event_id,
+                actor_user_id=event.actor_user_id,
+            )
+
+        # Backfill the visible history for older records created before the
+        # append-only event stream was introduced.
         add_event(
             emergency.triggered_at,
             "EMERGENCY_CREATED",
@@ -153,7 +198,7 @@ class EmergencyService:
             .join(Facility, TransferRequest.from_facility_id == Facility.facility_id)
             .outerjoin(TransferDispatch, TransferRequest.transfer_id == TransferDispatch.transfer_id)
             .where(TransferRequest.emergency_case_id == emergency_case_id)
-            .order_by(TransferRequest.requested_at.asc())
+            .order_by(TransferRequest.requested_at.asc().nullslast())
         )
         for transfer, donor_name, dispatch in self.db.execute(query).all():
             transfer_id = transfer.transfer_id
@@ -222,7 +267,10 @@ class EmergencyService:
 
         return {
             "emergency_case_id": str(emergency_case_id),
-            "timeline_scope": "timestamps currently stored on emergency, transfer and dispatch records",
+            "timeline_scope": (
+                "Append-only operational transition events, with legacy timestamps used "
+                "only where no stored event exists."
+            ),
             "events": events,
         }
 
