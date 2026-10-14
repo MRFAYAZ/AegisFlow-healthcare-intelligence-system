@@ -45,13 +45,18 @@ class IntegrationMedicineMappingResponse(BaseModel):
 
 class IntegrationBatchSnapshot(BaseModel):
     batch_number: str = Field(min_length=1, max_length=100)
+    
+    @field_validator("batch_number")
+    @classmethod
+    def strip_batch_number(cls, value: str) -> str:
+        return value.strip()
     manufacturing_date: date
     expiry_date: date
     quantity_received: int = Field(ge=0)
     available_stock: int = Field(ge=0, description="Source-reported available stock before AegisFlow reservations.")
     reserved_stock: int = Field(ge=0, description="Reservations external to AegisFlow.")
     supplier_name: str = Field(default="Unknown source", max_length=255)
-    unit_cost: Decimal | None = Field(default=None, ge=0)
+    unit_cost: Decimal = Field(default=Decimal("0"), ge=0)
 
     @model_validator(mode="after")
     def validate_lot_quantity(self):
@@ -70,6 +75,11 @@ class IntegrationInventoryItem(BaseModel):
     daily_consumption_rate: Decimal = Field(ge=0)
     lead_time_days: int = Field(ge=0)
     batches: list[IntegrationBatchSnapshot] = Field(default_factory=list)
+
+    @field_validator("external_medicine_code")
+    @classmethod
+    def strip_external_medicine_code(cls, value: str) -> str:
+        return value.strip()
 
     @model_validator(mode="after")
     def validate_snapshot_batches(self):
@@ -90,6 +100,11 @@ class IntegrationInventorySnapshotRequest(BaseModel):
     external_event_id: str = Field(min_length=1, max_length=255)
     source_timestamp: datetime
     items: list[IntegrationInventoryItem] = Field(min_length=1, max_length=500)
+
+    @field_validator("external_event_id")
+    @classmethod
+    def strip_external_event_id(cls, value: str) -> str:
+        return value.strip()
 
     @field_validator("source_timestamp")
     @classmethod
