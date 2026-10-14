@@ -6,6 +6,10 @@ export interface StockoutForecast {
   medicine_name: string
   available_stock: number
   reserved_stock: number
+  batch_verified_usable_stock: number
+  expired_batch_quantity: number
+  batch_traceability: "VERIFIED" | "EXPIRED_ONLY" | "UNVERIFIED"
+  eligible_batch_count: number
   usable_stock: number
   daily_consumption_rate: number
   lead_time_days: number
