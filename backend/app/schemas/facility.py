@@ -90,3 +90,10 @@ class FacilityResponse(BaseSchema):
     is_24x7: bool
 
     is_active: bool
+    # Read-only coordinates let network clients plot registered facilities without
+    # requiring a second request or exposing patient/commercial inventory data.
+    latitude: float
+    longitude: float
+    city: str
+    state: str
+    address_line: Optional[str] = None
