@@ -110,6 +110,10 @@ class StockoutForecastResponse(BaseModel):
     medicine_name: str
     available_stock: int = Field(ge=0)
     reserved_stock: int = Field(ge=0)
+    batch_verified_usable_stock: int = Field(ge=0)
+    expired_batch_quantity: int = Field(ge=0)
+    batch_traceability: str
+    eligible_batch_count: int = Field(ge=0)
     usable_stock: int = Field(ge=0)
     daily_consumption_rate: float = Field(ge=0)
     lead_time_days: int = Field(ge=0)
