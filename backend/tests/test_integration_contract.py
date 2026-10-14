@@ -1,5 +1,11 @@
 from datetime import date, datetime, timezone
+import os
 from uuid import uuid4
+
+# Importing the ORM/service layer loads application settings; keep this unit
+# test isolated from any developer's real database or signing secret.
+os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
+os.environ.setdefault("JWT_SECRET_KEY", "aegisflow-test-only-secret")
 
 import pytest
 from pydantic import ValidationError
@@ -10,6 +16,7 @@ from app.schemas.integration import (
     IntegrationInventorySnapshotRequest,
     IntegrationSourceCreate,
 )
+from app.services.integration_service import IntegrationService
 
 
 def batch(
@@ -156,3 +163,11 @@ def test_batch_manufacturing_and_expiry_dates_are_consistent():
             expires=date(2026, 1, 1),
         )
 
+
+
+def test_integration_key_storage_uses_a_one_way_sha256_digest():
+    raw_key = "test-only-high-entropy-token"
+    digest = IntegrationService._credential_hash(raw_key)
+    assert digest != raw_key
+    assert len(digest) == 64
+    assert IntegrationService._credential_hash(raw_key) == digest
