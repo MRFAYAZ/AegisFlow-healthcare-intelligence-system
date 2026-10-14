@@ -2,7 +2,8 @@ from uuid import UUID
 
 from fastapi import (
     APIRouter,
-    Depends
+    Depends,
+    HTTPException,
 )
 
 from sqlalchemy.orm import Session
@@ -18,8 +19,14 @@ from app.schemas.inventory import (
 )
 
 from app.schemas.inventory import (
-    InventoryListResponse
+    InventoryListResponse,
+    StockoutForecastResponse,
 )
+
+from app.api.dependencies.auth import require_roles
+from app.core.enums import UserRoleEnum
+from app.models.user import User
+from app.services.inventory.forecast_service import ForecastService
 
 router = APIRouter(
     prefix="/inventory",
@@ -79,6 +86,31 @@ def get_critical_inventory(
     service = InventoryService(db)
 
     return service.get_critical_inventory()
+
+
+# =====================================================
+# STOCKOUT FORECAST INTELLIGENCE
+# =====================================================
+
+@router.get(
+    "/forecast",
+    response_model=list[StockoutForecastResponse],
+    summary="Project stockout risk from current stock and replenishment lead time",
+)
+def get_stockout_forecasts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles([
+            UserRoleEnum.SYSTEM_ADMIN,
+            UserRoleEnum.EMERGENCY_OPERATOR,
+            UserRoleEnum.HOSPITAL_ADMIN,
+        ])
+    ),
+):
+    try:
+        return ForecastService(db).get_forecasts(current_user)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 # =====================================================
