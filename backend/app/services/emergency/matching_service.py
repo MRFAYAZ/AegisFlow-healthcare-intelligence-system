@@ -47,11 +47,12 @@ class MatchingService:
         candidates: list[dict] = []
 
         for inventory, facility, location in rows:
-            # available_stock represents unreserved usable stock in the current
-            # inventory model. Protect the donor's minimum threshold.
+            # available_stock represents unreserved stock in the current schema.
+            # Protect the donor's minimum threshold before ranking it.
             transferable_quantity = max(
-                0, int(inventory.available_stock or 0)
-                - int(inventory.minimum_threshold or 0)
+                0,
+                int(inventory.available_stock or 0)
+                - int(inventory.minimum_threshold or 0),
             )
             if transferable_quantity <= 0:
                 continue
@@ -72,9 +73,7 @@ class MatchingService:
                     "facility_type": facility.facility_type.value,
                     "available_quantity": transferable_quantity,
                     "transferable_quantity": transferable_quantity,
-                    "suggested_quantity": min(
-                        transferable_quantity, requested_quantity
-                    ),
+                    "suggested_quantity": min(transferable_quantity, requested_quantity),
                     "remaining_stock": int(inventory.available_stock or 0),
                     "minimum_threshold": int(inventory.minimum_threshold or 0),
                     "distance_km": round(distance_km, 2),
