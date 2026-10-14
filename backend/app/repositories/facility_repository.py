@@ -86,6 +86,7 @@ class FacilityRepository(BaseRepository):
 
         query = (
             select(Facility)
+            .options(joinedload(Facility.location))
             .where(
                 Facility.facility_id == facility_id
             )
