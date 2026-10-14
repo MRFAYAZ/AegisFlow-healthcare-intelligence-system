@@ -12,6 +12,7 @@ export interface EmergencyMatch {
   facility_id: string
   facility_name: string
   facility_type: string
+  aggregate_available_quantity: number
   available_quantity: number
   transferable_quantity: number
   suggested_quantity: number
