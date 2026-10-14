@@ -95,8 +95,10 @@ export function DonorComparison({
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <Metric label="Safe transferable" value={`${donor.transferable_quantity} units`} />
+            <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+              <Metric label="Verified available" value={donor.available_quantity + " units"} />
+              <Metric label="Aggregate stock record" value={donor.aggregate_available_quantity + " units"} />
+              <Metric label="Safe transferable" value={donor.transferable_quantity + " units"} />
               <Metric label="Suggested" value={`${donor.suggested_quantity} units`} />
               <Metric label="Distance" value={`${donor.distance_km.toFixed(1)} km`} />
               <Metric label="Verified batches" value={String(donor.eligible_batch_count)} />
