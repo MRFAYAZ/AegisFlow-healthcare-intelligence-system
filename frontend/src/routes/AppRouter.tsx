@@ -9,6 +9,7 @@ import { TransfersPage } from '../pages/transfers/TransfersPage'
 import { AnalyticsPage } from '../pages/analytics/AnalyticsPage'
 import { MapPage } from '../pages/map/MapPage'
 import { ShopPage } from '../pages/shop/ShopPage'
+import { IntegrationsPage } from '../pages/integrations/IntegrationsPage'
 import { RouteErrorPage } from '../pages/error/RouteErrorPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
       { path:'analytics', element:<AnalyticsPage /> },
       { path:'map', element:<MapPage /> },
       { path:'shop', element:<ShopPage /> },
+      { path:'integrations', element:<IntegrationsPage /> },
     ],
     errorElement:<RouteErrorPage />,
   },
