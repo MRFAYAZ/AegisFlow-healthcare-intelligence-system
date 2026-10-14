@@ -11,6 +11,7 @@ from sqlalchemy import select
 from app.models.redistribution import (
     TransferRequest
 )
+from app.models.dispatch import TransferDispatch
 
 from app.core.enums import (
     TransferStatusEnum
@@ -141,65 +142,56 @@ class RedistributionRepository(
     # =====================================================
 
     def get_all_transfers(self):
-
         SourceFacility = aliased(Facility)
         DestinationFacility = aliased(Facility)
 
         query = (
             select(
                 TransferRequest.transfer_id,
-
                 TransferRequest.emergency_case_id,
-                
                 TransferRequest.from_facility_id,
-                SourceFacility.facility_name.label(
-                    "from_facility_name"
-                ),
-
+                SourceFacility.facility_name.label("from_facility_name"),
                 TransferRequest.to_facility_id,
-                DestinationFacility.facility_name.label(
-                    "to_facility_name"
-                ),
-
+                DestinationFacility.facility_name.label("to_facility_name"),
                 TransferRequest.medicine_id,
                 Medicine.medicine_name,
-
                 TransferRequest.requested_quantity,
                 TransferRequest.approved_quantity,
-
                 TransferRequest.transfer_status,
-
                 TransferRequest.cascade_safe,
-
                 TransferRequest.match_score,
-                
                 TransferRequest.transfer_distance_km,
-
                 TransferRequest.recommendation_reason,
-
                 TransferRequest.requested_at,
-
-                TransferRequest.completed_at
+                TransferRequest.approved_at,
+                TransferRequest.completed_at,
+                TransferRequest.rejection_reason,
+                TransferDispatch.dispatch_id,
+                TransferDispatch.status.label("dispatch_status"),
+                TransferDispatch.transport_type,
+                TransferDispatch.vehicle_reference,
+                TransferDispatch.dispatched_at,
+                TransferDispatch.delivered_at,
             )
             .join(
                 SourceFacility,
-                TransferRequest.from_facility_id == SourceFacility.facility_id
+                TransferRequest.from_facility_id == SourceFacility.facility_id,
             )
             .join(
                 DestinationFacility,
-                TransferRequest.to_facility_id == DestinationFacility.facility_id
+                TransferRequest.to_facility_id == DestinationFacility.facility_id,
             )
             .join(
                 Medicine,
-                TransferRequest.medicine_id == Medicine.medicine_id
+                TransferRequest.medicine_id == Medicine.medicine_id,
             )
+            .outerjoin(
+                TransferDispatch,
+                TransferRequest.transfer_id == TransferDispatch.transfer_id,
+            )
+            .order_by(TransferRequest.requested_at.desc())
         )
-
-        return (
-            self.db.execute(query)
-            .mappings()
-            .all()
-        )
+        return self.db.execute(query).mappings().all()
 
 
     # =====================================================
