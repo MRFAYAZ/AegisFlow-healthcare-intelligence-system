@@ -155,7 +155,7 @@ export function EmergencyPage() {
                 </p>
             </div>
             <EmergencyKPIs emergencies={emergencies} />
-            <EmergencyMap />
+            <EmergencyMap emergencies={filtered} />
             <EmergencyDrawer
                 emergency={selectedEmergency}
                 open={selectedEmergency !== null}
