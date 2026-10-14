@@ -8,6 +8,9 @@ from fastapi import (
 
 from sqlalchemy.orm import Session
 
+from app.api.dependencies.auth import require_roles
+from app.core.enums import UserRoleEnum
+
 from app.core.database import get_db
 
 from app.repositories.medicine_repository import (
@@ -39,7 +42,8 @@ router = APIRouter(
 )
 def create_medicine(
     payload: MedicineCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(require_roles([UserRoleEnum.SYSTEM_ADMIN])),
 ):
 
     service = MedicineService(
@@ -71,7 +75,12 @@ def create_medicine(
     response_model=list[MedicineResponse]
 )
 def get_all_medicines(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(require_roles([
+        UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR,
+        UserRoleEnum.HOSPITAL_ADMIN, UserRoleEnum.PHARMACIST,
+        UserRoleEnum.SHOP_OWNER, UserRoleEnum.SUPPLIER,
+    ])),
 ):
 
     service = MedicineService(
@@ -93,7 +102,12 @@ def get_all_medicines(
 )
 def get_medicine(
     medicine_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(require_roles([
+        UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR,
+        UserRoleEnum.HOSPITAL_ADMIN, UserRoleEnum.PHARMACIST,
+        UserRoleEnum.SHOP_OWNER, UserRoleEnum.SUPPLIER,
+    ])),
 ):
 
     service = MedicineService(

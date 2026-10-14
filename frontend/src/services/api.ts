@@ -34,6 +34,7 @@ export const authAPI = {
 // Inventory
 export const inventoryAPI = {
   getAll: () => api.get('/inventory'),
+  getForecast: () => api.get('/inventory/forecast'),
   create: (data: unknown) => api.post('/inventory', data),
   update: (id: string, data: unknown) => api.put(`/inventory/${id}`, data),
   delete: (id: string) => api.delete(`/inventory/${id}`),
@@ -45,14 +46,28 @@ export const emergencyAPI = {
   getActive: () => api.get('/emergencies/active'),
   getCritical: () => api.get('/emergencies/critical'),
   getDashboard: () => api.get('/emergencies/dashboard'),
+  getMatches: (emergencyCaseId: string, maxDistanceKm?: number) =>
+    api.get(`/emergencies/${emergencyCaseId}/matches`, {
+      params: maxDistanceKm ? { max_distance_km: maxDistanceKm } : undefined,
+    }),
+  getTimeline: (emergencyCaseId: string) =>
+    api.get(`/emergencies/${emergencyCaseId}/timeline`),
 }
 
 // Transfers
 export const transferAPI = {
-  getAll: () => api.get('/transfers'),
-  create: (data: unknown) => api.post('/transfers', data),
-  approve: (id: string) => api.post(`/transfers/${id}/approve`),
-  markDelivered: (id: string) => api.post(`/transfers/${id}/delivered`),
+  getAll: () => api.get('/redistribution'),
+  approve: (id: string, approvedQuantity: number) =>
+    api.post(`/redistribution/${id}/approve`, { approved_quantity: approvedQuantity }),
+  reject: (id: string, reason: string) =>
+    api.post(`/redistribution/${id}/reject`, { reason }),
+  assignDispatch: (id: string, transportType: string, vehicleReference?: string) =>
+    api.post(`/redistribution/${id}/assign`, {
+      transport_type: transportType,
+      vehicle_reference: vehicleReference || undefined,
+    }),
+  dispatch: (id: string) => api.post(`/redistribution/${id}/dispatch`),
+  markDelivered: (id: string) => api.post(`/redistribution/${id}/delivered`),
 }
 
 // Shortages
@@ -83,6 +98,26 @@ export const redistributionAPI = {
   getHighPriority: () =>
     api.get('/redistribution/high-priority'),
 
+  requestTransfer: (emergencyCaseId: string) =>
+    api.post('/redistribution/request', { emergency_case_id: emergencyCaseId }),
+  // Backwards-compatible alias; the backend treats this as a request, not a shipment dispatch.
   dispatch: (emergencyCaseId: string) =>
-    api.post('/redistribution/dispatch', { emergency_case_id: emergencyCaseId }),
+    api.post('/redistribution/request', { emergency_case_id: emergencyCaseId }),
+}
+
+// External integration gateway (System Admin workspace)
+export const integrationAPI = {
+  getSources: () => api.get('/integrations/sources'),
+  createSource: (data: { source_name: string; system_type: string; facility_id: string }) =>
+    api.post('/integrations/sources', data),
+  disableSource: (sourceId: string) =>
+    api.post(`/integrations/sources/${sourceId}/disable`),
+  rotateKey: (sourceId: string) =>
+    api.post(`/integrations/sources/${sourceId}/rotate-key`),
+  getMappings: (sourceId: string) =>
+    api.get(`/integrations/sources/${sourceId}/medicine-mappings`),
+  getEvents: (sourceId: string) =>
+    api.get(`/integrations/sources/${sourceId}/events`),
+  upsertMapping: (sourceId: string, data: { external_medicine_code: string; medicine_id: string }) =>
+    api.post(`/integrations/sources/${sourceId}/medicine-mappings`, data),
 }

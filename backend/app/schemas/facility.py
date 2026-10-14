@@ -41,6 +41,8 @@ class FacilityCreate(BaseModel):
 
     is_24x7: bool = False
 
+    cold_chain_capable: bool = False
+
 
 # =========================================================
 # UPDATE FACILITY
@@ -63,6 +65,8 @@ class FacilityUpdate(BaseModel):
     is_24x7: Optional[bool] = None
 
     is_active: Optional[bool] = None
+
+    cold_chain_capable: Optional[bool] = None
 
 
 # =========================================================
@@ -90,3 +94,29 @@ class FacilityResponse(BaseSchema):
     is_24x7: bool
 
     is_active: bool
+
+    cold_chain_capable: bool = False
+
+    # Read-only coordinates let network clients plot registered facilities without
+    # requiring a second request or exposing patient/commercial inventory data.
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    address_line: Optional[str] = None
+
+
+class FacilityNetworkResponse(BaseSchema):
+    """Minimal facility attributes shared across the healthcare network."""
+
+    facility_id: UUID
+    facility_name: str
+    facility_type: FacilityTypeEnum
+    location_id: UUID
+    is_active: bool
+    cold_chain_capable: bool = False
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    address_line: Optional[str] = None

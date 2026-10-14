@@ -73,7 +73,9 @@ class FacilityService:
 
             emergency_contact=payload.emergency_contact,
 
-            is_24x7=payload.is_24x7
+            is_24x7=payload.is_24x7,
+
+            cold_chain_capable=payload.cold_chain_capable
         )
 
         return self.repository.create(
@@ -114,3 +116,24 @@ class FacilityService:
             self.repository
             .get_all_facilities()
         )
+
+    def update_facility(self, facility_id: UUID, payload):
+        facility = self.get_facility(facility_id)
+        updates = payload.model_dump(exclude_unset=True)
+
+        if "license_number" in updates and updates["license_number"] != facility.license_number:
+            existing = self.repository.get_by_license(updates["license_number"])
+            if existing and existing.facility_id != facility_id:
+                raise HTTPException(status_code=400, detail="License number already exists.")
+
+        if "contact_email" in updates and updates["contact_email"] != facility.contact_email:
+            existing = self.repository.get_by_email(updates["contact_email"])
+            if existing and existing.facility_id != facility_id:
+                raise HTTPException(status_code=400, detail="Contact email already exists.")
+
+        for field, value in updates.items():
+            setattr(facility, field, value)
+
+        self.db.commit()
+        self.db.refresh(facility)
+        return self.repository.get_by_id(facility_id)

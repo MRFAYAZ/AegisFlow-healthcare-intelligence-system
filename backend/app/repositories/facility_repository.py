@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 
 from app.models.facility import Facility
@@ -86,6 +86,7 @@ class FacilityRepository(BaseRepository):
 
         query = (
             select(Facility)
+            .options(joinedload(Facility.location))
             .where(
                 Facility.facility_id == facility_id
             )
@@ -99,6 +100,6 @@ class FacilityRepository(BaseRepository):
 
     def get_all_facilities(self):
 
-        query = select(Facility)
+        query = select(Facility).options(joinedload(Facility.location))
 
         return self.db.execute(query).scalars().all()

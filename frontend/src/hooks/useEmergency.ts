@@ -1,21 +1,22 @@
 import { useQuery } from "@tanstack/react-query"
 import { emergencyAPI } from "../services/api"
 import type { Emergency } from "../types/emergency"
+import { useCurrentUser } from "./useCurrentUser"
 
-export function useEmergencies() {
+export function useEmergencies(enabled = true) {
+    const { data: user } = useCurrentUser()
 
     return useQuery<Emergency[]>({
 
-        queryKey: ["emergencies"],
+        queryKey: ["emergencies", user?.id ?? "anonymous"],
 
         queryFn: async () => {
-
-            const response =
-                await emergencyAPI.getAll()
-
+            const response = await emergencyAPI.getAll()
             return response.data
-        }
-
+        },
+        refetchInterval: 5000,
+        refetchOnWindowFocus: true,
+        enabled: enabled && Boolean(user?.id),
     })
 
 }

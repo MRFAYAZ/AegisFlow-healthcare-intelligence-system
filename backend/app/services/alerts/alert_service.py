@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
+from sqlalchemy import select
+from app.core.enums import UserRoleEnum
+from app.models.facility_user import FacilityUser
 
 from app.core.enums import (
     SeverityEnum,
@@ -309,3 +312,54 @@ class AlertService:
             self.alert_repository
             .get_alert_dashboard()
         )
+
+    def _alerts_for_user(self, user, active_only: bool = False, critical_only: bool = False):
+        if user.role in {UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR}:
+            alerts = self.alert_repository.get_all_alerts()
+        elif user.role in {
+            UserRoleEnum.HOSPITAL_ADMIN,
+            UserRoleEnum.PHARMACIST,
+            UserRoleEnum.SHOP_OWNER,
+            UserRoleEnum.SUPPLIER,
+        }:
+            facility_ids = self.db.execute(
+                select(FacilityUser.facility_id).where(
+                    FacilityUser.user_id == user.user_id,
+                )
+            ).scalars().all()
+            if not facility_ids:
+                raise PermissionError("No facility is assigned to this user.")
+            alerts = [
+                alert for alert in self.alert_repository.get_all_alerts()
+                if alert.facility_id in set(facility_ids)
+            ]
+        else:
+            raise PermissionError("This role cannot access alerts.")
+
+        if active_only:
+            alerts = [alert for alert in alerts if alert.alert_status == AlertStatusEnum.ACTIVE]
+        if critical_only:
+            alerts = [
+                alert for alert in alerts
+                if alert.severity in {SeverityEnum.CRITICAL, SeverityEnum.EMERGENCY}
+            ]
+        return alerts
+
+    def get_all_alerts_for_user(self, user):
+        return self._alerts_for_user(user)
+
+    def get_active_alerts_for_user(self, user):
+        return self._alerts_for_user(user, active_only=True)
+
+    def get_critical_alerts_for_user(self, user):
+        return self._alerts_for_user(user, critical_only=True)
+
+    def get_dashboard_for_user(self, user):
+        alerts = self._alerts_for_user(user)
+        return {
+            "total_alerts": len(alerts),
+            "active": sum(alert.alert_status == AlertStatusEnum.ACTIVE for alert in alerts),
+            "warning": sum(alert.severity == SeverityEnum.WARNING for alert in alerts),
+            "critical": sum(alert.severity == SeverityEnum.CRITICAL for alert in alerts),
+            "emergency": sum(alert.severity == SeverityEnum.EMERGENCY for alert in alerts),
+        }
