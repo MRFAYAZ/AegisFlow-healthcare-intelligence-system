@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     Integer,
@@ -7,7 +8,6 @@ from sqlalchemy import (
     ForeignKey,
     Enum,
     Text,
-    String,
     TIMESTAMP
 )
 
