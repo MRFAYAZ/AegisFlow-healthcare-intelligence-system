@@ -62,7 +62,7 @@ class TransferResponse(BaseSchema):
 
     transfer_status: TransferStatusEnum
 
-    cascade_safe: bool
+    cascade_safe: bool | None = None
 
     match_score: float | None = None
 
@@ -70,7 +70,7 @@ class TransferResponse(BaseSchema):
 
     recommendation_reason: str | None = None
 
-    requested_at: datetime
+    requested_at: datetime | None = None
 
     completed_at: datetime | None = None
 
