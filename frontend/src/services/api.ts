@@ -104,3 +104,18 @@ export const redistributionAPI = {
   dispatch: (emergencyCaseId: string) =>
     api.post('/redistribution/request', { emergency_case_id: emergencyCaseId }),
 }
+
+// External integration gateway (System Admin workspace)
+export const integrationAPI = {
+  getSources: () => api.get('/integrations/sources'),
+  createSource: (data: { source_name: string; system_type: string; facility_id: string }) =>
+    api.post('/integrations/sources', data),
+  disableSource: (sourceId: string) =>
+    api.post(`/integrations/sources/${sourceId}/disable`),
+  rotateKey: (sourceId: string) =>
+    api.post(`/integrations/sources/${sourceId}/rotate-key`),
+  getMappings: (sourceId: string) =>
+    api.get(`/integrations/sources/${sourceId}/medicine-mappings`),
+  upsertMapping: (sourceId: string, data: { external_medicine_code: string; medicine_id: string }) =>
+    api.post(`/integrations/sources/${sourceId}/medicine-mappings`, data),
+}
