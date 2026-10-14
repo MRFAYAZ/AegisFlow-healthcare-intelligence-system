@@ -9,6 +9,10 @@ interface TimelineEvent {
   title: string
   detail: string
   transfer_id: string | null
+  timeline_event_id?: string | null
+  actor_user_id?: string | null
+  event_payload?: Record<string, unknown>
+  event_source?: "APPEND_ONLY_EVENT" | "LEGACY_TIMESTAMP"
 }
 
 interface TimelineResponse {
@@ -38,12 +42,12 @@ export function EmergencyTimeline({ emergency }: Props) {
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-slate-900">Recorded operational timeline</h3>
         <p className="mt-1 text-sm text-slate-500">
-          Events are generated from timestamps persisted on the emergency, transfer and dispatch records.
+          Recorded state transitions are stored as operational events; pre-upgrade records use their existing timestamps for any missing milestones.
         </p>
       </div>
 
       <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-        This is a persisted-milestone timeline, not yet a complete append-only audit event stream.
+        Newly recorded request, decision, dispatch and delivery actions are appended in the same transaction as their state change. Legacy events are labelled where only a timestamp was available.
       </div>
 
       {isLoading && (
@@ -87,6 +91,13 @@ export function EmergencyTimeline({ emergency }: Props) {
                     Transfer #{event.transfer_id.slice(0, 8)}
                   </p>
                 )}
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                  {event.event_source === "APPEND_ONLY_EVENT"
+                    ? <span className="rounded bg-emerald-50 px-2 py-1 text-emerald-700">Recorded event</span>
+                    : <span className="rounded bg-slate-100 px-2 py-1 text-slate-600">Legacy timestamp</span>}
+                  {event.actor_user_id && <span>Actor {event.actor_user_id.slice(0, 8)}</span>}
+                  {event.timeline_event_id && <span>Event {event.timeline_event_id.slice(0, 8)}</span>}
+                </div>
               </div>
             </li>
           ))}
