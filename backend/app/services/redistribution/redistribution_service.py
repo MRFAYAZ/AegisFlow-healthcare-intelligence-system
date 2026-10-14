@@ -651,7 +651,67 @@ class RedistributionService:
             raise PermissionError("Authentication is required to request transfer.")
         return self.request_transfer_from_emergency(emergency_case_id, user)
 
-    # Existing read APIs remain in the established repository layer.
+    # Read APIs enforce network or hospital scope instead of exposing every
+    # organization's transfer records to any logged-in user.
+    def _facility_ids_for_hospital_admin(self, user) -> list[UUID]:
+        return list(
+            self.db.execute(
+                select(FacilityUser.facility_id).where(
+                    FacilityUser.user_id == user.user_id,
+                    FacilityUser.assigned_role == UserRoleEnum.HOSPITAL_ADMIN,
+                )
+            ).scalars().all()
+        )
+
+    def get_all_transfers_for_user(self, user) -> list[dict]:
+        from app.repositories.redistribution_repository import RedistributionRepository
+
+        if user.role in {UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR}:
+            return RedistributionRepository(self.db).get_all_transfers()
+        if user.role == UserRoleEnum.HOSPITAL_ADMIN:
+            facility_ids = self._facility_ids_for_hospital_admin(user)
+            if not facility_ids:
+                raise PermissionError("No hospital facility is assigned to this administrator.")
+            return RedistributionRepository(self.db).get_transfers_for_facilities(facility_ids)
+        raise PermissionError("This role cannot view transfer records.")
+
+    def get_high_priority_transfers_for_user(self, user) -> list[dict]:
+        transfers = self.get_all_transfers_for_user(user)
+        return [
+            transfer for transfer in transfers
+            if transfer.get("match_score") is not None
+            and float(transfer["match_score"]) >= 80
+        ]
+
+    def get_facility_transfers_for_user(self, facility_id: UUID, user) -> list[dict]:
+        from app.repositories.redistribution_repository import RedistributionRepository
+
+        if user.role in {UserRoleEnum.SYSTEM_ADMIN, UserRoleEnum.EMERGENCY_OPERATOR}:
+            return RedistributionRepository(self.db).get_transfers_for_facility(facility_id)
+        if user.role == UserRoleEnum.HOSPITAL_ADMIN:
+            if facility_id not in self._facility_ids_for_hospital_admin(user):
+                raise PermissionError("Hospital administrators may only view transfers for their assigned facility.")
+            return RedistributionRepository(self.db).get_transfers_for_facility(facility_id)
+        raise PermissionError("This role cannot view facility transfer records.")
+
+    def get_dashboard_for_user(self, user) -> dict:
+        transfers = self.get_all_transfers_for_user(user)
+        scores = [
+            float(transfer["match_score"])
+            for transfer in transfers
+            if transfer.get("match_score") is not None
+        ]
+        return {
+            "total_transfers": len(transfers),
+            "pending": sum(transfer["transfer_status"] == TransferStatusEnum.PENDING for transfer in transfers),
+            "approved": sum(transfer["transfer_status"] == TransferStatusEnum.APPROVED for transfer in transfers),
+            "in_transit": sum(transfer["transfer_status"] == TransferStatusEnum.IN_TRANSIT for transfer in transfers),
+            "completed": sum(transfer["transfer_status"] == TransferStatusEnum.COMPLETED for transfer in transfers),
+            "high_priority": sum(score >= 80 for score in scores),
+            "average_match_score": round(sum(scores) / len(scores), 2) if scores else 0.0,
+        }
+
+    # Compatibility service methods for trusted internal callers.
     def get_all_transfers(self):
         from app.repositories.redistribution_repository import RedistributionRepository
         return RedistributionRepository(self.db).get_all_transfers()
