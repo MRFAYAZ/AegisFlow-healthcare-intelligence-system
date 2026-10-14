@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.engines.emergency.geo import haversine_km
 from app.engines.emergency.matching_engine import MatchingEngine
+from app.engines.inventory.medicine_safety import safe_transferable_quantity
 from app.models.facility import Facility
 from app.models.inventory import InventoryBatch, InventoryCurrent
 from app.models.location import Location
@@ -76,17 +77,13 @@ class MatchingService:
             if not eligible_lots:
                 continue
 
-            stock_above_threshold = max(
-                0,
-                int(inventory.available_stock or 0)
-                - int(inventory.minimum_threshold or 0),
-            )
             batch_verified_quantity = sum(
                 int(lot.quantity_available or 0) for lot in eligible_lots
             )
-            transferable_quantity = min(
-                stock_above_threshold,
-                batch_verified_quantity,
+            transferable_quantity = safe_transferable_quantity(
+                aggregate_available_stock=int(inventory.available_stock or 0),
+                minimum_threshold=int(inventory.minimum_threshold or 0),
+                unexpired_batch_available=batch_verified_quantity,
             )
             if transferable_quantity <= 0:
                 continue
