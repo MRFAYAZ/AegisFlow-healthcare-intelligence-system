@@ -95,21 +95,20 @@ class EmergencyService:
             )
         )
 
+        quantity_needed = max(
+            0,
+            int(emergency.required_quantity or 0)
+            - int(emergency.available_quantity or 0),
+        )
         matches = (
-            self.matching_service
-            .find_emergency_sources(
-                medicine_id=
-                emergency.medicine_id,
-
-                requesting_facility_id=
-                emergency.facility_id,
-
-                requested_quantity=max(
-                    0,
-                    int(emergency.required_quantity or 0)
-                    - int(emergency.available_quantity or 0),
-                )
+            self.matching_service.find_emergency_sources(
+                medicine_id=emergency.medicine_id,
+                requesting_facility_id=emergency.facility_id,
+                requested_quantity=quantity_needed,
+                max_distance_km=emergency.emergency_radius_km,
             )
+            if quantity_needed > 0
+            else []
         )
 
         return {
