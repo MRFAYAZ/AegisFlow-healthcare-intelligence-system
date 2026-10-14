@@ -94,6 +94,9 @@ class FacilityResponse(BaseSchema):
     is_24x7: bool
 
     is_active: bool
+
+    cold_chain_capable: bool = False
+
     # Read-only coordinates let network clients plot registered facilities without
     # requiring a second request or exposing patient/commercial inventory data.
     latitude: float
