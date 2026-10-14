@@ -13,6 +13,8 @@ from app.core.enums import (
 )
 from app.models.dispatch import TransferDispatch
 from app.models.emergency import EmergencyCase
+from app.models.facility import Facility
+from app.models.medicine import Medicine
 from app.models.facility_user import FacilityUser
 from app.models.inventory import InventoryBatch, InventoryCurrent
 from app.models.transfer_batch_allocation import TransferBatchAllocation
@@ -253,6 +255,19 @@ class RedistributionService:
             donor_inventory = self._locked_inventory(
                 transfer.from_facility_id, transfer.medicine_id
             )
+            medicine = self.db.get(Medicine, transfer.medicine_id)
+            if medicine is not None and medicine.requires_cold_chain:
+                donor_facility = self.db.get(Facility, transfer.from_facility_id)
+                receiving_facility = self.db.get(Facility, transfer.to_facility_id)
+                if (
+                    donor_facility is None
+                    or receiving_facility is None
+                    or not donor_facility.cold_chain_capable
+                    or not receiving_facility.cold_chain_capable
+                ):
+                    raise ValueError(
+                        "Cold-chain medicine requires declared cold-chain capability at both facilities."
+                    )
             safe_transferable = max(
                 0,
                 int(donor_inventory.available_stock)
@@ -351,6 +366,24 @@ class RedistributionService:
             transfer = self._get_transfer_for_update(transfer_id)
             if transfer.transfer_status != TransferStatusEnum.APPROVED:
                 raise ValueError("Only approved transfers can be assigned for dispatch.")
+
+            medicine = self.db.get(Medicine, transfer.medicine_id)
+            if medicine is not None and medicine.requires_cold_chain:
+                donor_facility = self.db.get(Facility, transfer.from_facility_id)
+                receiving_facility = self.db.get(Facility, transfer.to_facility_id)
+                if (
+                    donor_facility is None
+                    or receiving_facility is None
+                    or not donor_facility.cold_chain_capable
+                    or not receiving_facility.cold_chain_capable
+                ):
+                    raise ValueError(
+                        "Cold-chain transfer requires declared capability at both facilities."
+                    )
+                if "cold" not in transport_type.strip().lower():
+                    raise ValueError(
+                        "Assign a cold-chain vehicle for this medicine before dispatch."
+                    )
 
             existing = self.db.execute(
                 select(TransferDispatch)
