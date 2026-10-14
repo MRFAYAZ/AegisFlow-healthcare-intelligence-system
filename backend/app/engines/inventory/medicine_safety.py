@@ -12,8 +12,10 @@ def safe_transferable_quantity(
     """Return quantity protected by both stock threshold and verified lots."""
     if min(aggregate_available_stock, minimum_threshold, unexpired_batch_available) < 0:
         raise ValueError("Stock quantities cannot be negative.")
-    stock_surplus = max(0, aggregate_available_stock - minimum_threshold)
-    return min(stock_surplus, unexpired_batch_available)
+    # Safety thresholds must be protected by usable, expiry-verified stock,
+    # not by aggregate quantities that may contain expired/untraceable units.
+    usable_stock = min(aggregate_available_stock, unexpired_batch_available)
+    return max(0, usable_stock - minimum_threshold)
 
 
 def plan_fefo_reservation(
