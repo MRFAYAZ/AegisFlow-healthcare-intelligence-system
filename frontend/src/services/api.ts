@@ -87,6 +87,9 @@ export const redistributionAPI = {
   getHighPriority: () =>
     api.get('/redistribution/high-priority'),
 
+  requestTransfer: (emergencyCaseId: string) =>
+    api.post('/redistribution/request', { emergency_case_id: emergencyCaseId }),
+  // Backwards-compatible alias; the backend treats this as a request, not a shipment dispatch.
   dispatch: (emergencyCaseId: string) =>
-    api.post('/redistribution/dispatch', { emergency_case_id: emergencyCaseId }),
+    api.post('/redistribution/request', { emergency_case_id: emergencyCaseId }),
 }
