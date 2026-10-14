@@ -7,6 +7,7 @@ import secrets
 from uuid import UUID
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.enums import SeverityEnum, TransferStatusEnum
@@ -94,6 +95,12 @@ class IntegrationService:
                     "AegisFlow stores its SHA-256 hash, not the raw key."
                 ),
             }
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise ValueError(
+                "An integration source already exists for this facility or the key conflicts. "
+                "Refresh the source list and rotate the existing source if needed."
+            ) from exc
         except Exception:
             self.db.rollback()
             raise
@@ -213,6 +220,11 @@ class IntegrationService:
                 "medicine_id": mapping.medicine_id,
                 "is_active": mapping.is_active,
             }
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise ValueError(
+                "This external medicine code already has a mapping. Refresh the mapping list and retry."
+            ) from exc
         except Exception:
             self.db.rollback()
             raise
