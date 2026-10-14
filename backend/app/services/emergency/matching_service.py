@@ -35,6 +35,8 @@ class MatchingService:
         requesting_location = self.db.get(Location, requesting_facility.location_id)
         if requesting_location is None:
             raise ValueError("Requesting facility location was not found.")
+        if requesting_location.latitude is None or requesting_location.longitude is None:
+            raise ValueError("Requesting facility needs coordinates for geographic donor matching.")
 
         medicine = self.db.get(Medicine, medicine_id)
         if medicine is None:
