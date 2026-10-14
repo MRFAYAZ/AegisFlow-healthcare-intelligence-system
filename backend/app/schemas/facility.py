@@ -41,6 +41,8 @@ class FacilityCreate(BaseModel):
 
     is_24x7: bool = False
 
+    cold_chain_capable: bool = False
+
 
 # =========================================================
 # UPDATE FACILITY
@@ -63,6 +65,8 @@ class FacilityUpdate(BaseModel):
     is_24x7: Optional[bool] = None
 
     is_active: Optional[bool] = None
+
+    cold_chain_capable: Optional[bool] = None
 
 
 # =========================================================
