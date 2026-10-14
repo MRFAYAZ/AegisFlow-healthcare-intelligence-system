@@ -5,6 +5,7 @@ from sqlalchemy.orm import (
 from sqlalchemy import select
 
 from app.models.facility import Facility
+from app.models.location import Location
 from app.models.medicine import Medicine
 from app.models.redistribution import TransferRequest
 from app.models.dispatch import TransferDispatch
@@ -36,6 +37,8 @@ class EmergencyRepository(BaseRepository):
     def _base_emergency_query(self):
 
         DonorFacility = aliased(Facility)
+        FacilityLocation = aliased(Location)
+        DonorLocation = aliased(Location)
 
         return (
             select(
@@ -44,6 +47,8 @@ class EmergencyRepository(BaseRepository):
 
                 EmergencyCase.facility_id,
                 Facility.facility_name.label("facility_name"),
+                FacilityLocation.latitude.label("facility_latitude"),
+                FacilityLocation.longitude.label("facility_longitude"),
 
                 EmergencyCase.medicine_id,
                 Medicine.medicine_name.label("medicine_name"),
@@ -83,9 +88,9 @@ class EmergencyRepository(BaseRepository):
                 TransferDispatch.dispatched_at,
                 TransferDispatch.delivered_at,
 
-                DonorFacility.facility_name.label(
-                    "donor_facility"
-                )
+                DonorFacility.facility_name.label("donor_facility"),
+                DonorLocation.latitude.label("donor_latitude"),
+                DonorLocation.longitude.label("donor_longitude")
 
             )
 
@@ -95,6 +100,10 @@ class EmergencyRepository(BaseRepository):
                 Facility.facility_id
             )
 
+            .join(
+                FacilityLocation,
+                Facility.location_id == FacilityLocation.location_id
+            )
             .join(
                 Medicine,
                 EmergencyCase.medicine_id ==
@@ -115,6 +124,10 @@ class EmergencyRepository(BaseRepository):
                 DonorFacility,
                 TransferRequest.from_facility_id ==
                 DonorFacility.facility_id
+            )
+            .outerjoin(
+                DonorLocation,
+                DonorFacility.location_id == DonorLocation.location_id
             )
             # Emergency cards show one latest transfer summary per emergency.
             # The transfer-list API remains the source for viewing every leg.
