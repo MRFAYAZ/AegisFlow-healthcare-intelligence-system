@@ -9,13 +9,11 @@ export function useEmergencies() {
         queryKey: ["emergencies"],
 
         queryFn: async () => {
-
-            const response =
-                await emergencyAPI.getAll()
-
+            const response = await emergencyAPI.getAll()
             return response.data
-        }
-
+        },
+        refetchInterval: 5000,
+        refetchOnWindowFocus: true,
     })
 
 }
