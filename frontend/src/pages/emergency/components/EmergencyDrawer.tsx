@@ -155,7 +155,7 @@ export function EmergencyDrawer({
 
           {activeTab === "ai" && <AIRecommendation emergency={emergency} onDispatch={handleDispatch} actionLabel={dispatchLabel} dispatchDisabled={!hasRecommendation} />}
 
-          {activeTab === "donors" && <DonorComparison emergency={emergency} onDispatch={handleDispatch} />}
+          {activeTab === "donors" && <DonorComparison emergency={emergency} />}
 
           {activeTab === "timeline" && <EmergencyTimeline emergency={emergency} />}
 
