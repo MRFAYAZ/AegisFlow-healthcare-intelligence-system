@@ -54,11 +54,11 @@ def upgrade() -> None:
     # UPDATE or DELETE against it.
     op.execute("""
     CREATE OR REPLACE FUNCTION reject_emergency_timeline_event_mutation()
-    RETURNS trigger AS $
+    RETURNS trigger AS $$
     BEGIN
         RAISE EXCEPTION 'Emergency timeline events are append-only';
     END;
-    $ LANGUAGE plpgsql;
+    $$ LANGUAGE plpgsql;
     """)
     op.execute("""
     CREATE TRIGGER trg_emergency_timeline_events_append_only
