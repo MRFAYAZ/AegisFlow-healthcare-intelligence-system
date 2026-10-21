@@ -69,6 +69,13 @@ class Medicine(Base, TimestampMixin):
         default=False
     )
 
+    requires_cold_chain: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        server_default="false",
+    )
+
     storage_conditions: Mapped[str] = mapped_column(
         Text
     )

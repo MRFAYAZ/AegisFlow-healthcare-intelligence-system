@@ -63,3 +63,10 @@ class OutbreaksStatusEnum(str, Enum):
     CONFIRMED = "CONFIRMED"
     RESOLVED = "RESOLVED"
     
+
+class DispatchStatusEnum(str, Enum):
+    ASSIGNED = "ASSIGNED"
+    IN_TRANSIT = "IN_TRANSIT"
+    DELIVERED = "DELIVERED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"

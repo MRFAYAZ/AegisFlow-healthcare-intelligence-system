@@ -55,6 +55,10 @@ from app.api.routes.event_logs import (
 from app.api.routes.user_sessions import (
     router as user_sessions_router
 )
+
+from app.api.routes.integrations import (
+    router as integrations_router
+)
 # =========================================================
 # FASTAPI APPLICATION
 # =========================================================
@@ -144,6 +148,11 @@ app.include_router(
 
 app.include_router(
     user_sessions_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    integrations_router,
     prefix="/api/v1"
 )
 # =========================================================

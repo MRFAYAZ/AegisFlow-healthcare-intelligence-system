@@ -9,7 +9,8 @@ from pydantic import (
 from app.core.enums import (
     SeverityEnum,
     EmergencyStatusEnum,
-    TransferStatusEnum
+    TransferStatusEnum,
+    DispatchStatusEnum
 )
 
 from app.schemas.common import (
@@ -53,6 +54,8 @@ class EmergencyResponse(BaseSchema):
 
     facility_id: UUID
     facility_name: str
+    facility_latitude: float | None = None
+    facility_longitude: float | None = None
 
     medicine_id: UUID
     medicine_name: str
@@ -80,6 +83,8 @@ class EmergencyResponse(BaseSchema):
     transfer_id: UUID | None = None
 
     donor_facility: str | None = None
+    donor_latitude: float | None = None
+    donor_longitude: float | None = None
 
     transfer_status: TransferStatusEnum | None = None
 
@@ -95,7 +100,17 @@ class EmergencyResponse(BaseSchema):
 
     ai_reason: str | None = None
 
-    alternative_donors:int | None = None
+    alternative_donors: int | None = None
+
+    requested_at: datetime | None = None
+    approved_at: datetime | None = None
+    completed_at: datetime | None = None
+    rejection_reason: str | None = None
+    dispatch_status: DispatchStatusEnum | None = None
+    transport_type: str | None = None
+    vehicle_reference: str | None = None
+    dispatched_at: datetime | None = None
+    delivered_at: datetime | None = None
 # =========================================================
 # EMERGENCY MATCH RESPONSE
 # =========================================================

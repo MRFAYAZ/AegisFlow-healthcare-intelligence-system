@@ -5,6 +5,10 @@ from fastapi import (
 
 from sqlalchemy.orm import Session
 
+from app.api.dependencies.auth import require_roles
+from app.core.enums import UserRoleEnum
+from app.models.user import User
+
 from app.core.database import get_db
 
 from app.services.governance.user_session_service import (
@@ -23,7 +27,8 @@ router = APIRouter(
 
 @router.get("")
 def get_all_sessions(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRoleEnum.SYSTEM_ADMIN])),
 ):
 
     service = UserSessionService(db)
@@ -37,7 +42,8 @@ def get_all_sessions(
 
 @router.get("/active")
 def get_active_sessions(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRoleEnum.SYSTEM_ADMIN])),
 ):
 
     service = UserSessionService(db)

@@ -168,6 +168,11 @@ class InventoryBatch(Base, TimestampMixin):
         back_populates="batches"
     )
 
+    transfer_allocations = relationship(
+        "TransferBatchAllocation",
+        back_populates="batch"
+    )
+
 
 # =========================================================
 # INVENTORY SNAPSHOT

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     Integer,
@@ -67,8 +68,29 @@ class TransferRequest(Base, TimestampMixin):
         nullable=False
     )
 
-    approved_quantity: Mapped[int] = mapped_column(
-        Integer
+    approved_quantity: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True
+    )
+
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True
+    )
+
+    approved_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True
+    )
+
+    rejection_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
     )
 
     transfer_status: Mapped[TransferStatusEnum] = mapped_column(
@@ -78,27 +100,33 @@ class TransferRequest(Base, TimestampMixin):
 
     cascade_safe: Mapped[bool] = mapped_column(
         Boolean,
-        default=True
+        default=True,
+        nullable=False
     )
 
-    match_score: Mapped[float] = mapped_column(
-        DECIMAL(5, 2)
+    match_score: Mapped[float | None] = mapped_column(
+        DECIMAL(5, 2),
+        nullable=True
     )
 
-    transfer_distance_km: Mapped[float] = mapped_column(
-        DECIMAL(10, 2)
+    transfer_distance_km: Mapped[float | None] = mapped_column(
+        DECIMAL(10, 2),
+        nullable=True
     )
 
-    recommendation_reason: Mapped[str] = mapped_column(
-        Text
+    recommendation_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
     )
 
-    requested_at: Mapped[str] = mapped_column(
-        TIMESTAMP(timezone=True)
+    requested_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True
     )
 
-    completed_at: Mapped[str] = mapped_column(
-        TIMESTAMP(timezone=True)
+    completed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True
     )
 
     source_facility = relationship(
@@ -112,3 +140,15 @@ class TransferRequest(Base, TimestampMixin):
     )
 
     medicine = relationship("Medicine")
+
+    dispatch = relationship(
+        "TransferDispatch",
+        back_populates="transfer",
+        uselist=False
+    )
+    
+    batch_allocations = relationship(
+        "TransferBatchAllocation",
+        back_populates="transfer",
+        cascade="all, delete-orphan"
+    )

@@ -68,6 +68,13 @@ class Facility(Base, TimestampMixin):
         default=True
     )
 
+    cold_chain_capable: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        server_default="false",
+    )
+
     location = relationship(
         "Location",
         back_populates="facilities"
@@ -79,3 +86,22 @@ class Facility(Base, TimestampMixin):
     )
 
     
+    @property
+    def latitude(self) -> float | None:
+        return float(self.location.latitude) if self.location else None
+
+    @property
+    def longitude(self) -> float | None:
+        return float(self.location.longitude) if self.location else None
+
+    @property
+    def city(self) -> str | None:
+        return self.location.city if self.location else None
+
+    @property
+    def state(self) -> str | None:
+        return self.location.state if self.location else None
+
+    @property
+    def address_line(self) -> str | None:
+        return self.location.address_line if self.location else None

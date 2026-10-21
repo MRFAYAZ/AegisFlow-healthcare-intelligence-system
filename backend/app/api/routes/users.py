@@ -6,6 +6,10 @@ from fastapi import (
     HTTPException
 )
 
+from app.api.dependencies.auth import require_roles
+from app.core.enums import UserRoleEnum
+from app.models.user import User
+
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -29,7 +33,8 @@ router = APIRouter(
     response_model=list[UserResponse]
 )
 def get_all_users(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRoleEnum.SYSTEM_ADMIN])),
 ):
 
     service = UserService(db)
@@ -43,7 +48,8 @@ def get_all_users(
 )
 def get_user(
     user_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRoleEnum.SYSTEM_ADMIN])),
 ):
 
     service = UserService(db)

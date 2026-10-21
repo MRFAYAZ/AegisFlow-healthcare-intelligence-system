@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import (
     BaseModel,
     EmailStr
@@ -43,3 +45,5 @@ class CurrentUserResponse(BaseModel):
     email: EmailStr
 
     role: UserRoleEnum
+
+    facility_ids: list[UUID] = []
