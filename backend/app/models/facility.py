@@ -71,6 +71,12 @@ class Facility(Base, TimestampMixin):
 
     cold_chain_capable: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    network_visibility_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
     location = relationship(
         "Location",
         back_populates="facilities"

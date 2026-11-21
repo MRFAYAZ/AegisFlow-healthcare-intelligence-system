@@ -14,8 +14,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const requestUrl = err.config?.url ?? ''
+    const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/me')
+
+    if (err.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('aegisflow_token')
+      localStorage.removeItem('aegisflow_user')
       window.location.href = '/login'
     }
     return Promise.reject(err)
@@ -91,6 +95,28 @@ export const facilitiesAPI = {
   getAll: () => api.get('/facilities'),
   getNearby: (lat: number, lng: number, radius: number) =>
     api.get(`/facilities/nearby?lat=${lat}&lng=${lng}&radius=${radius}`),
+}
+
+export const medicinesAPI = {
+  getAll: () => api.get('/medicines'),
+}
+
+export const networkExchangeAPI = {
+  getAccessibleFacilities: () => api.get('/network-exchange/facilities'),
+  setVisibility: (facilityId: string, enabled: boolean) =>
+    api.patch(`/network-exchange/facilities/${facilityId}/visibility`, { enabled }),
+  search: (payload: {
+    requester_facility_id: string
+    medicine_id: string
+    required_quantity: number
+    radius_km: number
+    emergency_override: boolean
+  }) => api.post('/network-exchange/search', payload),
+}
+
+export const profilesAPI = {
+  getAll: () => api.get('/profiles'),
+  getMe: () => api.get('/profiles/me'),
 }
 
 export const redistributionAPI = {

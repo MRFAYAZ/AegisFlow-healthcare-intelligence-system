@@ -23,8 +23,10 @@ from app.core.config import settings
 from app.core.database import get_db
 
 from app.core.enums import (
+    UserProfileEnum,
     UserRoleEnum,
 )
+from app.core.profile_access import user_has_profile_access
 
 from app.models.user import User
 
@@ -152,3 +154,19 @@ def require_roles(
         return current_user
 
     return role_checker
+
+
+def require_profile_access(
+    allowed_profiles: list[UserProfileEnum | str],
+):
+    def profile_checker(
+        current_user: User = Depends(get_current_user),
+    ) -> User:
+        if not user_has_profile_access(current_user.role, allowed_profiles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Profile access denied",
+            )
+        return current_user
+
+    return profile_checker

@@ -10,7 +10,9 @@ import { AnalyticsPage } from '../pages/analytics/AnalyticsPage'
 import { MapPage } from '../pages/map/MapPage'
 import { ShopPage } from '../pages/shop/ShopPage'
 import { ProcurementPage } from '../pages/procurement/ProcurementPage'
+import { NetworkExchangePage } from '../pages/network-exchange/NetworkExchangePage'
 import { DispatcherDashboardPage } from '../pages/dispatcher/DispatcherDashboardPage'
+import { ProfilesPage } from '../pages/profiles/ProfilesPage'
 import { RouteErrorPage } from '../pages/error/RouteErrorPage'
 import { useAppStore } from '../store/useAppStore'
 import { canAccessRoute, getWorkspace, type AppRoute } from '../auth/rolePermissions'
@@ -22,7 +24,7 @@ function ProtectedRoute({ children, route }: { children: React.ReactNode; route?
   const user = useAppStore((state) => state.user)
   if (!user) return <Navigate to="/login" replace />
 
-  if (route && !canAccessRoute(user?.role, route)) {
+  if (route && !canAccessRoute(user?.role, route, user?.profile_access)) {
     return <Navigate to="/dashboard" replace />
   }
 
@@ -51,6 +53,8 @@ const router = createBrowserRouter([
       { path:'map', element:<ProtectedRoute route="/map"><MapPage /></ProtectedRoute> },
       { path:'shop', element:<ProtectedRoute route="/shop"><ShopPage /></ProtectedRoute> },
       { path:'procurement', element:<ProtectedRoute route="/procurement"><ProcurementPage /></ProtectedRoute> },
+      { path:'network-exchange', element:<ProtectedRoute route="/network-exchange"><NetworkExchangePage /></ProtectedRoute> },
+      { path:'profiles', element:<ProtectedRoute route="/profiles"><ProfilesPage /></ProtectedRoute> },
     ],
     errorElement:<RouteErrorPage />,
   },

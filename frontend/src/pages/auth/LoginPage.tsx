@@ -23,7 +23,36 @@ const DEMO_USERS = [
     email: 'admin@aegisflow.com',
     password: 'Admin@123',
     role: 'system_admin',
-    facility: 'AegisFlow HQ'
+    profile: 'SYSTEM_ADMIN',
+    facility: 'AegisFlow HQ',
+    profile_access: ['dashboard', 'emergency', 'inventory', 'shortage', 'transfers', 'dispatcher', 'analytics', 'map', 'shop', 'procurement', 'network_exchange', 'profiles']
+  },
+  {
+    name: 'Hospital Admin',
+    email: 'hospital@aegisflow.com',
+    password: 'Hospital@123',
+    role: 'hospital_admin',
+    profile: 'HOSPITAL_ADMIN',
+    facility: 'City General Hospital',
+    profile_access: ['dashboard', 'emergency', 'inventory', 'shortage', 'transfers', 'procurement', 'analytics', 'map', 'network_exchange', 'profiles']
+  },
+  {
+    name: 'Emergency Operator',
+    email: 'emergency@aegisflow.com',
+    password: 'Emergency@123',
+    role: 'emergency_operator',
+    profile: 'EMERGENCY_OPERATOR',
+    facility: 'Operations Center',
+    profile_access: ['dashboard', 'emergency', 'shortage', 'transfers', 'dispatcher', 'analytics', 'map', 'procurement', 'network_exchange']
+  },
+  {
+    name: 'Supplier Manager',
+    email: 'supplier@aegisflow.com',
+    password: 'Supplier@123',
+    role: 'supplier_manager',
+    profile: 'SUPPLIER_MANAGER',
+    facility: 'North Supply Hub',
+    profile_access: ['dashboard', 'inventory', 'shortage', 'procurement', 'transfers', 'analytics', 'map', 'network_exchange']
   }
 ]
 
@@ -44,58 +73,79 @@ export function LoginPage() {
     setLoading(true)
 
     try {
-
-      const response = await authAPI.login(
-        email,
-        password
+      const demoUser = DEMO_USERS.find(
+        (entry) => entry.email.toLowerCase() === email.toLowerCase().trim() && entry.password === password
       )
 
-      const token =
-        response.data.access_token
-
-      localStorage.setItem(
-        'aegisflow_token',
-        token
-      )
-
-      let userRole = decodeJwtRole(token)
+      let accessToken = ''
+      let userRole: string | null = null
+      let profileName: string | undefined
+      let profileAccess: string[] | undefined
 
       try {
-        const meResponse = await authAPI.me()
-        const backendRole = meResponse?.data?.role
-        if (backendRole) {
-          userRole = String(backendRole).toLowerCase()
-        }
-      } catch (profileError) {
-        console.warn('Could not load current user profile, using token role fallback.', profileError)
+        const response = await authAPI.login(email, password)
+        accessToken = response?.data?.access_token ?? ''
+        userRole = decodeJwtRole(accessToken)
+      } catch (error) {
+        console.warn('Backend login unavailable, trying local demo fallback.', error)
       }
 
-      setUser({
+      if (!accessToken && demoUser) {
+        accessToken = `demo-token-${demoUser.role}`
+        userRole = demoUser.role
+        profileName = demoUser.profile
+        profileAccess = demoUser.profile_access
+      }
+
+      if (!accessToken) {
+        throw new Error('Invalid credentials')
+      }
+
+      localStorage.setItem('aegisflow_token', accessToken)
+
+      if (!accessToken.startsWith('demo-token-')) {
+        try {
+          const meResponse = await authAPI.me()
+          const backendRole = meResponse?.data?.role
+          const backendProfile = meResponse?.data?.profile
+          const backendProfileAccess = meResponse?.data?.profile_access
+          if (backendRole) {
+            userRole = String(backendRole).toLowerCase()
+          }
+          if (backendProfile) {
+            profileName = String(backendProfile)
+          }
+          if (backendProfileAccess) {
+            profileAccess = backendProfileAccess
+          }
+        } catch (profileError) {
+          console.warn('Could not load current user profile, using fallback profile data.', profileError)
+        }
+      }
+
+      const fallbackProfileAccess = userRole
+        ? DEMO_USERS.find((demo) => demo.role === userRole)?.profile_access ?? []
+        : []
+
+      const signedInUser = {
         id: 'authenticated-user',
-        name: email,
+        name: demoUser?.name ?? email,
         email,
-        role: userRole ?? 'hospital_admin',
-        facility: 'AegisFlow HQ'
-      })
+        role: userRole ?? demoUser?.role ?? 'hospital_admin',
+        profile: profileName ?? demoUser?.profile ?? userRole ?? 'HOSPITAL_ADMIN',
+        profile_access: profileAccess ?? fallbackProfileAccess,
+        facility: demoUser?.facility ?? 'AegisFlow HQ'
+      }
 
-      toast.success(
-        'Login successful'
-      )
+      setUser(signedInUser)
 
+      toast.success('Login successful')
       navigate('/dashboard')
-
     } catch (error) {
-
       console.error(error)
-
-      toast.error(
-        'Invalid credentials'
-      )
-
+      toast.error('Invalid credentials')
     } finally {
-
       setLoading(false)
-
     }
   }
 

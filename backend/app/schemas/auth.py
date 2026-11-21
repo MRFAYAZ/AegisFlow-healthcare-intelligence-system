@@ -43,3 +43,7 @@ class CurrentUserResponse(BaseModel):
     email: EmailStr
 
     role: UserRoleEnum
+
+    profile: str | None = None
+
+    profile_access: list[str] = []

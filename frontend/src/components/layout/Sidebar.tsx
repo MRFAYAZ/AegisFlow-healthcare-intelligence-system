@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Activity, AlertTriangle, ArrowLeftRight, BarChart3, Boxes, BusFront, LayoutDashboard, Map, ShoppingCart } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowLeftRight, BarChart3, Boxes, BusFront, LayoutDashboard, Map, Network, ShieldCheck, ShoppingCart } from 'lucide-react'
 import { useEmergencies } from '../../hooks/useEmergency'
 import { useAppStore } from '../../store/useAppStore'
 import { canAccessRoute, getWorkspace, type AppRoute } from '../../auth/rolePermissions'
@@ -15,6 +15,8 @@ const routeMeta: Record<AppRoute, { icon: typeof Activity; label: string; badge?
   '/map': { icon: Map, label: 'Situation map' },
   '/shop': { icon: ShoppingCart, label: 'Supply requests' },
   '/procurement': { icon: ShoppingCart, label: 'Supply Intelligence' },
+  '/network-exchange': { icon: Network, label: 'Network Exchange' },
+  '/profiles': { icon: ShieldCheck, label: 'Access profiles' },
 }
 
 export function Sidebar() {
@@ -48,7 +50,7 @@ export function Sidebar() {
         {(workspace?.sections ?? []).map((section) => (
           <div key={section.name} className="px-2 mb-1">
             <div className="text-[10px] text-ink-faint uppercase tracking-[0.5px] px-2 py-2">{section.name}</div>
-            {section.routes.filter((route) => canAccessRoute(user?.role, route)).map((route) => {
+            {section.routes.filter((route) => canAccessRoute(user?.role, route, user?.profile_access)).map((route) => {
               const item = routeMeta[route]
               const liveCount = route === '/emergency' ? activeEmer : item.badge
               return (

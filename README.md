@@ -1,3 +1,9 @@
+# AegisFlow
+
+**An Interoperable Healthcare Supply Network Intelligence and Emergency Redistribution Platform**
+
+AegisFlow connects existing healthcare systems for controlled availability sharing, predictive supply intelligence, policy-aware network coordination, and human-approved emergency redistribution. It is designed as an interoperability layer, not a replacement for hospital, pharmacy, or supplier systems.
+
 1. Clone repository
 
 2. Backend

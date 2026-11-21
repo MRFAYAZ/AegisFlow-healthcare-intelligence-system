@@ -16,6 +16,7 @@ const pageTitles: Record<string, string> = {
   '/map':       'Geospatial map',
   '/shop':      'Medical shop',
   '/procurement': 'Supply Intelligence',
+  '/profiles': 'Access profiles',
 }
 
 export function Topbar() {
@@ -136,9 +137,14 @@ export function Topbar() {
       </div>
 
       {/* Status */}
-      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 border border-green-200 text-[11px] font-medium text-green-700">
-        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-        All systems normal
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-[10px] font-semibold text-blue-700 uppercase tracking-[0.08em]">
+          {user?.profile || user?.role || 'PROFILE'}
+        </div>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 border border-green-200 text-[11px] font-medium text-green-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+          All systems normal
+        </div>
       </div>
     </header>
   )

@@ -11,6 +11,8 @@ export type AppRoute =
   | '/map'
   | '/shop'
   | '/procurement'
+  | '/network-exchange'
+  | '/profiles'
 
 export interface WorkspaceDefinition {
   name: string
@@ -30,6 +32,23 @@ export const routePermissions: Record<AppRoute, Role[]> = {
   '/map': ['system_admin', 'hospital_admin', 'emergency_operator', 'dispatcher', 'supplier_manager'],
   '/shop': ['system_admin', 'pharmacist', 'shop_owner'],
   '/procurement': ['system_admin', 'hospital_admin', 'emergency_operator', 'supplier_manager'],
+  '/network-exchange': ['system_admin', 'hospital_admin', 'pharmacist', 'shop_owner', 'emergency_operator', 'supplier_manager'],
+  '/profiles': ['system_admin', 'hospital_admin'],
+}
+
+const routeModuleMap: Record<AppRoute, string> = {
+  '/dashboard': 'dashboard',
+  '/emergency': 'emergency',
+  '/inventory': 'inventory',
+  '/shortage': 'shortage',
+  '/transfers': 'transfers',
+  '/dispatcher': 'dispatcher',
+  '/analytics': 'analytics',
+  '/map': 'map',
+  '/shop': 'shop',
+  '/procurement': 'procurement',
+  '/network-exchange': 'network_exchange',
+  '/profiles': 'profiles',
 }
 
 export function normalizeRole(role?: string | null): Role | null {
@@ -39,9 +58,26 @@ export function normalizeRole(role?: string | null): Role | null {
   return (normalized === 'supplier' ? 'supplier_manager' : normalized) as Role
 }
 
-export function canAccessRoute(role: string | null | undefined, route: AppRoute): boolean {
+export function normalizeProfile(profile?: string | null): string | null {
+  if (!profile) return null
+  return profile.toLowerCase().replace(/\s+/g, '_')
+}
+
+export function canAccessRoute(
+  role: string | null | undefined,
+  route: AppRoute,
+  profileAccess?: string[] | null,
+): boolean {
   const normalizedRole = normalizeRole(role)
-  return normalizedRole !== null && routePermissions[route].includes(normalizedRole)
+  const roleAllowed = normalizedRole !== null && routePermissions[route].includes(normalizedRole)
+
+  const normalizedProfileAccess = (profileAccess ?? [])
+    .map((entry) => normalizeProfile(entry))
+    .filter((entry): entry is string => Boolean(entry))
+
+  const profileAllowed = normalizedProfileAccess.includes(routeModuleMap[route])
+
+  return roleAllowed || profileAllowed
 }
 
 const workspaceDefinitions: Record<Role, WorkspaceDefinition> = {
@@ -50,8 +86,9 @@ const workspaceDefinitions: Record<Role, WorkspaceDefinition> = {
     description: 'Platform oversight and network visibility',
     landingRoute: '/dashboard',
     sections: [
-      { name: 'Command', routes: ['/dashboard', '/analytics', '/map'] },
+      { name: 'Command', routes: ['/dashboard', '/analytics', '/map', '/network-exchange'] },
       { name: 'Operations', routes: ['/emergency', '/shortage', '/procurement', '/transfers', '/dispatcher'] },
+      { name: 'Governance', routes: ['/profiles'] },
     ],
   },
   hospital_admin: {
@@ -59,8 +96,9 @@ const workspaceDefinitions: Record<Role, WorkspaceDefinition> = {
     description: 'Emergency decisions, inventory and incoming transfers',
     landingRoute: '/dashboard',
     sections: [
-      { name: 'Hospital', routes: ['/dashboard', '/emergency', '/inventory', '/shortage', '/procurement', '/transfers'] },
+      { name: 'Hospital', routes: ['/dashboard', '/emergency', '/inventory', '/shortage', '/procurement', '/transfers', '/network-exchange'] },
       { name: 'Intelligence', routes: ['/analytics', '/map'] },
+      { name: 'Governance', routes: ['/profiles'] },
     ],
   },
   emergency_operator: {
@@ -68,7 +106,7 @@ const workspaceDefinitions: Record<Role, WorkspaceDefinition> = {
     description: 'Coordinate shortages, allocation and response logistics',
     landingRoute: '/emergency',
     sections: [
-      { name: 'Operations', routes: ['/emergency', '/shortage', '/procurement', '/transfers', '/dispatcher'] },
+      { name: 'Operations', routes: ['/emergency', '/shortage', '/procurement', '/transfers', '/dispatcher', '/network-exchange'] },
       { name: 'Situation awareness', routes: ['/dashboard', '/map', '/analytics'] },
     ],
   },
@@ -86,7 +124,7 @@ const workspaceDefinitions: Record<Role, WorkspaceDefinition> = {
     description: 'Manage safe inventory and transfer requests',
     landingRoute: '/inventory',
     sections: [
-      { name: 'Donor facility', routes: ['/inventory', '/shortage', '/transfers', '/shop'] },
+      { name: 'Donor facility', routes: ['/inventory', '/shortage', '/transfers', '/shop', '/network-exchange'] },
       { name: 'Overview', routes: ['/dashboard'] },
     ],
   },
@@ -95,7 +133,7 @@ const workspaceDefinitions: Record<Role, WorkspaceDefinition> = {
     description: 'Manage shop inventory and supply requests',
     landingRoute: '/inventory',
     sections: [
-      { name: 'Donor facility', routes: ['/inventory', '/transfers', '/shop'] },
+      { name: 'Donor facility', routes: ['/inventory', '/transfers', '/shop', '/network-exchange'] },
       { name: 'Overview', routes: ['/dashboard'] },
     ],
   },
@@ -104,7 +142,7 @@ const workspaceDefinitions: Record<Role, WorkspaceDefinition> = {
     description: 'Monitor supply inventory and network demand',
     landingRoute: '/inventory',
     sections: [
-      { name: 'Supply', routes: ['/inventory', '/shortage', '/procurement', '/transfers'] },
+      { name: 'Supply', routes: ['/inventory', '/shortage', '/procurement', '/transfers', '/network-exchange'] },
       { name: 'Intelligence', routes: ['/dashboard', '/analytics', '/map'] },
     ],
   },

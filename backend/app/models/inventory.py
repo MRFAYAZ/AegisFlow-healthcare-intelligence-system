@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     String,
@@ -90,6 +91,10 @@ class InventoryCurrent(Base, TimestampMixin):
     )
 
     last_restocked_at: Mapped[str] = mapped_column(
+        TIMESTAMP(timezone=True)
+    )
+
+    external_observed_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True)
     )
 

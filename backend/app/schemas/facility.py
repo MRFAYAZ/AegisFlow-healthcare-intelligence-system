@@ -90,3 +90,5 @@ class FacilityResponse(BaseSchema):
     is_24x7: bool
 
     is_active: bool
+
+    network_visibility_enabled: bool = False

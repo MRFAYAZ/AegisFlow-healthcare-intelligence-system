@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.core.config import settings
 
 from fastapi.middleware.cors import (
     CORSMiddleware
@@ -40,6 +41,10 @@ from app.api.routes.auth import (
     router as auth_router
 )
 
+from app.api.routes.profiles import (
+    router as profiles_router
+)
+
 from app.api.routes.users import (
     router as users_router
 )
@@ -59,6 +64,7 @@ from app.api.routes.event_logs import (
 from app.api.routes.user_sessions import (
     router as user_sessions_router
 )
+from app.api.routes.network_exchange import router as network_exchange_router
 # =========================================================
 # FASTAPI APPLICATION
 # =========================================================
@@ -66,14 +72,14 @@ from app.api.routes.user_sessions import (
 app = FastAPI(
     title="AegisFlow Healthcare Intelligence System",
     version="1.0.0",
-    description="Healthcare Supply Intelligence Platform"
+    description=(
+        "Interoperable healthcare supply network intelligence and coordination platform"
+    )
 )
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=[
-        "http://localhost:5173"
-    ],
+    allow_origins=settings.CORS_ORIGINS,
 
     allow_credentials=True,
 
@@ -139,6 +145,11 @@ app.include_router(
 )
 
 app.include_router(
+    profiles_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
     users_router,
     prefix="/api/v1"
 )
@@ -160,6 +171,11 @@ app.include_router(
 
 app.include_router(
     user_sessions_router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    network_exchange_router,
     prefix="/api/v1"
 )
 # =========================================================

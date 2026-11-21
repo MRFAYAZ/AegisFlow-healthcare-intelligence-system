@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies.auth import get_current_user
 from app.core.database import get_db
+from app.core.enums import UserProfileEnum
+from app.core.profile_access import get_profile_permissions
 from app.models.user import User
 
 from app.services.auth.auth_service import (
@@ -68,9 +70,12 @@ def login(
 def me(
     current_user: User = Depends(get_current_user)
 ):
+    profile = UserProfileEnum(current_user.role)
     return {
         "user_id": str(current_user.user_id),
         "full_name": current_user.full_name,
         "email": current_user.email,
         "role": current_user.role,
+        "profile": profile.value,
+        "profile_access": get_profile_permissions(profile),
     }
