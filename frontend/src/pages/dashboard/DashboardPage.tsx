@@ -162,7 +162,6 @@ export function DashboardPage() {
         </div>
 
         <RecentTransfersPanel />
-        </div>
       </div>
     </div>
   )
