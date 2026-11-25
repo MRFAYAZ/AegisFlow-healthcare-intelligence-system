@@ -3,6 +3,7 @@ import { KPICard } from '../../components/ui/KPICard'
 import { EmergencyBanner } from '../../components/ui/EmergencyBanner'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import { useDashboard } from '../../hooks/useDashboard'
+import { RecentTransfersPanel } from './RecentTransfersPanel'
 
 export function DashboardPage() {
   const { data, isLoading } = useDashboard()
@@ -160,18 +161,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Transfers List */}
-        <div className="panel shadow-md border border-border flex flex-col">
-          <div className="panel-title mb-5">Recent Transfers</div>
-          <div className="flex-1 flex flex-col items-center justify-center text-ink-faint space-y-2 pb-4">
-            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-            <p className="text-sm">Awaiting Transfer API Connection</p>
-            <button className="text-xs text-blue-600 hover:underline mt-2" onClick={() => navigate('/transfers')}>
-              Go to Transfers Page
-            </button>
-          </div>
+        <RecentTransfersPanel />
         </div>
       </div>
     </div>
