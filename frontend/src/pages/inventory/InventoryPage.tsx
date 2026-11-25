@@ -3,19 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
 import { useInventory } from "../../hooks/useInventory"
-
-type InventoryRecord = {
-  inventory_id: string
-  facility_name?: string
-  facility_id?: string
-  medicine_name?: string
-  medicine_id?: string
-  category?: string
-  total_stock: number
-  available_stock: number
-  reserved_stock: number
-  severity?: string
-}
+import type { InventoryRecord } from "../../types/inventory"
 
 const severityStyle: Record<string, "red" | "orange" | "yellow" | "green"> = {
   EMERGENCY: "red",
@@ -35,7 +23,7 @@ export function InventoryPage() {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<"all" | "critical" | "warning" | "adequate">("all")
 
-  const inventory = data as unknown as InventoryRecord[]
+  const inventory = data
   const filtered = useMemo(() => inventory.filter((item) => {
     const query = search.trim().toLowerCase()
     const name = String(item.medicine_name ?? item.medicine_id ?? "").toLowerCase()
