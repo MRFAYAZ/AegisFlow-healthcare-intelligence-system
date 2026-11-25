@@ -1,1 +1,43 @@
+# Secrets and local environment
 .env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+backend/venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Build and editor files
+*.egg-info/
+build/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local databases, logs and runtime artifacts
+*.sqlite
+*.sqlite3
+*.db
+*.log
