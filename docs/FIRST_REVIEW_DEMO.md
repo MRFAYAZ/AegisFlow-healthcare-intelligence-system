@@ -101,9 +101,9 @@ Evidence: emergency detail, map and donor comparison.
 
 Evidence: transfer detail before/after each state change and final timeline.
 
-### G. Ayurvedic network expansion
+### G. Future category expansion (not part of today's live demo)
 
-For first review, show this as a domain extension design unless the functionality has been implemented and tested:
+Category-specific onboarding, including Ayurvedic products, is deferred. Mention it only as future scope after the core conventional-medicine redistribution workflow is validated. Do not present this as an implemented module or spend live-demo time on it.
 
 - Product category: conventional medicine / Ayurvedic product.
 - Product identity and formulation fields appropriate to the category.
@@ -228,7 +228,7 @@ The fallback must use the same demo dataset and application services; do not sub
 6. Stockout-risk calculation.
 7. Explainable donor matching.
 8. Emergency transfer approval and dispatch.
-9. Ayurvedic product-network extension.
+9. Deferred product-category expansion (future scope).
 10. Implemented capabilities, current limitations and next milestone.
 
 ## 10. Definition of done
