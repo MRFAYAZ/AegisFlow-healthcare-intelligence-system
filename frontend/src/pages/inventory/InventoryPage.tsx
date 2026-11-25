@@ -26,8 +26,8 @@ export function InventoryPage() {
   const inventory = data
   const filtered = useMemo(() => inventory.filter((item) => {
     const query = search.trim().toLowerCase()
-    const name = String(item.medicine_name ?? item.medicine_id ?? "").toLowerCase()
-    const facility = String(item.facility_name ?? item.facility_id ?? "").toLowerCase()
+    const name = String(item.medicine_name ?? "").toLowerCase()
+    const facility = String(item.facility_name ?? "").toLowerCase()
     const matchesSearch = !query || name.includes(query) || facility.includes(query)
     const severity = String(item.severity ?? "").toUpperCase()
     const matchesFilter = filter === "all"
@@ -107,8 +107,8 @@ export function InventoryPage() {
                 const needsSupply = ["CRITICAL", "EMERGENCY", "WARNING"].includes(severity)
                 return (
                   <tr key={item.inventory_id}>
-                    <td className="font-medium text-ink">{item.medicine_name ?? item.medicine_id ?? "Unknown medicine"}</td>
-                    <td className="text-ink-muted">{item.facility_name ?? item.facility_id ?? "Unknown facility"}</td>
+                    <td className="font-medium text-ink">{item.medicine_name || "Unknown medicine"}</td>
+                    <td className="text-ink-muted">{item.facility_name || "Unknown facility"}</td>
                     <td>{total}</td>
                     <td>{available}</td>
                     <td>{reserved}</td>
