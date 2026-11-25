@@ -14,7 +14,7 @@ It is designed to complement—not replace—each participant's existing HIS, ER
 - Rank eligible donor facilities using distance, transferable quantity and donor stock protection.
 - Coordinate transfer request, approval, dispatch and delivery with an auditable timeline.
 - Build a historical data foundation for demand forecasting and network analytics.
-- Extend the product catalogue to conventional and Ayurvedic medicine products using category-appropriate metadata and validation.
+- Keep the product catalogue extensible for future categories; category-specific onboarding is deferred until the core conventional-medicine workflow is validated.
 
 ## Current technology
 
